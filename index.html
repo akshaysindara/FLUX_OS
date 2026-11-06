@@ -985,7 +985,7 @@
         initCharts();
         setTimeout(() => moveDockBubble('home'), 40);
 
-        // --- NEW: Register Service Worker for Offline Mode ---
+        // --- Register Service Worker for Offline Mode ---
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js')
             .then((reg) => console.log('FLUX OS Offline Engine Active!', reg.scope))
