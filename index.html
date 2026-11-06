@@ -1,0 +1,2248 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>FLUX // Personal Expense OS</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0a0c">
+    <link rel="apple-touch-icon" href="logo.png">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts: Space Grotesk, Inter, JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        obsidian: '#0a0a0c',
+                        charcoal: '#121216',
+                        glass: '#18181f',
+                        glassBorder: '#272732',
+                        neonTeal: '#00f5d4',
+                        neonCoral: '#ff4d6d',
+                        neonAmber: '#ffb703',
+                        neonPurple: '#9b5de5',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            box-sizing: border-box;
+        }
+        input, textarea, select {
+            user-select: text;
+        }
+        html, body {
+            background-color: #040406;
+            color: #f4f4f6;
+            font-family: 'Inter', sans-serif;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            position: fixed;
+            inset: 0;
+            overscroll-behavior: none;
+        }
+
+        /* Vibrant Ambient Mesh Background */
+        .bg-mesh-ambient {
+            background-color: #050508;
+            background-image:
+                radial-gradient(circle at 15% 18%, rgba(0, 245, 212, 0.16) 0%, transparent 45%),
+                radial-gradient(circle at 85% 28%, rgba(155, 93, 229, 0.15) 0%, transparent 45%),
+                radial-gradient(circle at 50% 88%, rgba(255, 77, 109, 0.14) 0%, transparent 50%);
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .app-shell {
+            max-width: 440px;
+            width: 100%;
+            height: 100%;
+            margin: 0 auto;
+            background-color: transparent;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .safe-header {
+            padding-top: calc(env(safe-area-inset-top, 0px) + 28px);
+            background: rgba(10, 10, 14, 0.65);
+            backdrop-filter: blur(28px) saturate(190%);
+            -webkit-backdrop-filter: blur(28px) saturate(190%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Apple Spatial Glass Cards & Modals */
+        .hero-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(20, 20, 30, 0.65) 100%);
+            backdrop-filter: blur(36px) saturate(210%);
+            -webkit-backdrop-filter: blur(36px) saturate(210%);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow:
+                0 24px 48px -12px rgba(0, 0, 0, 0.85),
+                inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.35),
+                inset 0 -1.5px 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.07) 0%, rgba(18, 18, 26, 0.58) 100%);
+            backdrop-filter: blur(28px) saturate(190%);
+            -webkit-backdrop-filter: blur(28px) saturate(190%);
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            box-shadow:
+                0 14px 32px -8px rgba(0, 0, 0, 0.65),
+                inset 0 1px 0.5px 0 rgba(255, 255, 255, 0.24);
+        }
+
+        /* Frosted Glass Overlay Modals */
+        .glass-modal-backdrop {
+            background: rgba(4, 4, 8, 0.75);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+        }
+
+        /* Apple Music Style Floating Glass Dock */
+        .apple-dock-track {
+            background: rgba(12, 12, 18, 0.62);
+            backdrop-filter: blur(40px) saturate(240%);
+            -webkit-backdrop-filter: blur(40px) saturate(240%);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            box-shadow:
+                0 24px 48px rgba(0, 0, 0, 0.9),
+                inset 0 1px 1px rgba(255, 255, 255, 0.22),
+                inset 0 -1px 1px rgba(0, 0, 0, 0.6);
+            transform: translateZ(0);
+        }
+
+        .liquid-glass-bubble {
+            position: absolute;
+            top: -5px;
+            bottom: -5px;
+            left: 0;
+            border-radius: 24px;
+            background: radial-gradient(120% 100% at 50% 0%, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.05) 45%, rgba(10, 10, 14, 0.65) 100%);
+            backdrop-filter: blur(20px) saturate(220%);
+            -webkit-backdrop-filter: blur(20px) saturate(220%);
+            border: 1.2px solid rgba(255, 255, 255, 0.38);
+            box-shadow:
+                0 14px 28px -6px rgba(0, 0, 0, 0.85),
+                0 0 22px rgba(0, 245, 212, 0.18),
+                inset 0 2px 3px rgba(255, 255, 255, 0.65),
+                inset 0 -3px 5px rgba(255, 255, 255, 0.35);
+            transition: transform 0.55s cubic-bezier(0.22, 1.35, 0.36, 1), width 0.4s cubic-bezier(0.22, 1.35, 0.36, 1);
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .liquid-glass-bubble::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 16%;
+            right: 16%;
+            height: 6px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.05) 100%);
+            filter: blur(0.4px);
+        }
+
+        .liquid-glass-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: 20%;
+            right: 20%;
+            height: 5px;
+            border-radius: 999px;
+            background: linear-gradient(0deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.0) 100%);
+            filter: blur(0.5px);
+        }
+
+        .apple-orb-btn {
+            background: radial-gradient(120% 100% at 50% 0%, rgba(0, 245, 212, 0.38) 0%, rgba(16, 24, 28, 0.72) 100%);
+            backdrop-filter: blur(32px) saturate(220%);
+            -webkit-backdrop-filter: blur(32px) saturate(220%);
+            border: 1.2px solid rgba(0, 245, 212, 0.5);
+            box-shadow:
+                0 16px 32px rgba(0, 0, 0, 0.85),
+                0 0 20px rgba(0, 245, 212, 0.25),
+                inset 0 2px 3px rgba(255, 255, 255, 0.65),
+                inset 0 -2px 4px rgba(0, 245, 212, 0.3);
+            transition: transform 0.35s cubic-bezier(0.22, 1.35, 0.36, 1);
+        }
+        .apple-orb-btn:active {
+            transform: scale(0.88);
+        }
+
+        .dock-tab-btn {
+            position: relative;
+            z-index: 10;
+            transition: transform 0.4s cubic-bezier(0.22, 1.35, 0.36, 1), color 0.25s ease;
+        }
+        .dock-tab-btn.active-tab {
+            color: #ffffff;
+            transform: scale(1.06);
+        }
+        .dock-tab-btn.active-tab i {
+            color: #00f5d4;
+            filter: drop-shadow(0 0 8px rgba(0, 245, 212, 0.6));
+        }
+
+        .spring-transition {
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .btn-press:active {
+            transform: scale(0.94);
+        }
+
+        .numpad-btn {
+            background: #14141c;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .numpad-btn:active {
+            transform: scale(0.91);
+            background: rgba(0, 245, 212, 0.25);
+            border-color: rgba(0, 245, 212, 0.6);
+            color: #00f5d4;
+        }
+
+        .glow-teal {
+            box-shadow: 0 0 25px rgba(0, 245, 212, 0.35);
+        }
+        .glow-coral {
+            box-shadow: 0 0 25px rgba(255, 77, 109, 0.35);
+        }
+
+        .privacy-blur {
+            filter: blur(8px);
+            transition: filter 0.25s ease;
+        }
+
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(14px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .animate-item {
+            animation: slideUpFade 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.25); }
+        }
+        .pulse-dot {
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-mesh-ambient">
+
+<div class="app-shell">
+
+    <!-- Top Header Bar -->
+    <header class="px-5 pb-3 safe-header flex items-center justify-between z-20 shrink-0">
+        <div class="flex items-center space-x-3">
+            <!-- App Logo (Functions as the Vault Trigger) -->
+            <div class="w-10 h-10 rounded-2xl glass-card flex items-center justify-center relative group cursor-pointer hover:border-neonTeal/50 transition overflow-hidden btn-press" onclick="switchTab('goals')" title="Open Vault">
+                <span class="w-2 h-2 rounded-full bg-neonTeal absolute top-1 right-1 pulse-dot z-10"></span>
+                <img src="logo.png" alt="FLUX Logo" class="w-full h-full object-cover">
+            </div>
+            <div>
+                <div class="flex items-center space-x-1.5">
+                    <span class="text-[10px] font-mono uppercase tracking-[0.2em] text-zinc-400">FLUX // OS</span>
+                    <span class="text-[9px] font-mono bg-neonTeal/10 text-neonTeal border border-neonTeal/30 px-1.5 py-0.2 rounded">v3.0</span>
+                </div>
+                <div class="flex items-center space-x-2 mt-0.5">
+                    <select id="monthSelector" onchange="handleMonthChange()" class="bg-transparent font-display font-bold text-sm text-white focus:outline-none cursor-pointer pr-1">
+                        <!-- Populated by JS -->
+                    </select>
+                    <i class="fa-solid fa-chevron-down text-[10px] text-zinc-500 pointer-events-none -ml-1"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <button onclick="openExchangeModal()" title="Exchange Cash <-> UPI" class="w-9 h-9 rounded-xl glass-card flex items-center justify-center text-neonAmber hover:text-white btn-press">
+                <i class="fa-solid fa-right-left text-xs"></i>
+            </button>
+            <button onclick="togglePrivacyMode()" id="privacyBtn" title="Privacy Mode" class="w-9 h-9 rounded-xl glass-card flex items-center justify-center text-zinc-400 hover:text-white btn-press">
+                <i class="fa-solid fa-eye text-xs" id="privacyIcon"></i>
+            </button>
+            <button onclick="openBudgetModal()" title="Set Monthly Budget" class="w-9 h-9 rounded-xl glass-card flex items-center justify-center text-neonTeal hover:text-white btn-press">
+                <i class="fa-solid fa-sliders text-xs"></i>
+            </button>
+            <button onclick="openDataModal()" title="Backup & Restore" class="w-9 h-9 rounded-xl glass-card flex items-center justify-center text-neonPurple hover:text-white btn-press">
+                <i class="fa-solid fa-shield-halved text-xs"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN SCROLLABLE VIEWPORT -->
+    <main id="mainScroll" class="flex-1 overflow-y-auto no-scrollbar px-5 pt-4 pb-32 space-y-5">
+
+        <!-- ================= TAB 1: HOME / DASHBOARD ================= -->
+        <div id="tab-home" class="space-y-5">
+
+            <!-- Hero Card with Wallet Toggle & Direct Balance Edit -->
+            <div class="hero-card rounded-[28px] p-5 relative overflow-hidden">
+                <div class="absolute -top-12 -right-12 w-36 h-36 bg-neonTeal/20 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -bottom-12 -left-12 w-36 h-36 bg-neonCoral/15 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="flex items-start justify-between">
+                    <div>
+                        <!-- Wallet Mode Pill Switcher -->
+                        <div class="flex items-center space-x-1.5 mb-2 bg-black/40 p-1 rounded-xl border border-white/10 w-fit">
+                            <button onclick="setWalletMode('UPI')" id="walletBtnUPI" class="px-2.5 py-1 rounded-lg font-mono text-[10px] font-bold bg-neonTeal text-obsidian transition">⚡ UPI WALLET</button>
+                            <button onclick="setWalletMode('CASH')" id="walletBtnCash" class="px-2.5 py-1 rounded-lg font-mono text-[10px] font-bold text-zinc-400 transition">💵 HAND CASH</button>
+                        </div>
+
+                        <!-- Balance Display + Direct Edit Trigger -->
+                        <div onclick="openEditBalanceModal()" class="flex items-center space-x-2.5 cursor-pointer group mt-1" title="Tap to edit balance">
+                            <h2 id="heroNetBalance" class="font-mono text-3xl font-extrabold tracking-tight text-white privacy-target">₹0</h2>
+                            <span class="w-7 h-7 rounded-xl bg-white/[0.08] group-hover:bg-neonTeal/20 border border-white/15 group-hover:border-neonTeal/40 flex items-center justify-center text-zinc-300 group-hover:text-neonTeal transition btn-press">
+                                <i class="fa-solid fa-pen text-[10px]"></i>
+                            </span>
+                        </div>
+
+                        <!-- Secondary Wallet Quick Preview Pill -->
+                        <div class="flex items-center space-x-2 mt-1.5">
+                            <span id="otherWalletSummary" onclick="toggleWalletMode()" class="text-[10px] font-mono text-zinc-300 hover:text-white cursor-pointer privacy-target">
+                                💵 Hand Cash: ₹0
+                            </span>
+                            <span class="text-zinc-600">•</span>
+                            <button onclick="openExchangeModal()" class="text-[10px] font-mono text-neonAmber hover:underline flex items-center gap-1">
+                                <i class="fa-solid fa-right-left text-[8px]"></i> Exchange
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Safe-to-Spend Daily Allowance Pill -->
+                    <div onclick="openBudgetModal()" class="cursor-pointer bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 rounded-2xl px-3 py-2 text-right transition">
+                        <span class="text-[9px] font-mono uppercase tracking-wider text-zinc-300 block">SAFE DAILY BURN</span>
+                        <div class="flex items-center justify-end space-x-1 mt-0.5">
+                            <i class="fa-solid fa-fire-flame-curved text-neonTeal text-[11px]" id="burnIcon"></i>
+                            <span id="safeDailyAllowance" class="font-mono text-xs font-bold text-neonTeal privacy-target">₹0/day</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Income & Expense Mini Grid -->
+                <div class="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-white/[0.09]">
+                    <div class="glass-card rounded-2xl p-3 flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-xl bg-neonTeal/15 border border-neonTeal/30 flex items-center justify-center text-neonTeal shrink-0">
+                            <i class="fa-solid fa-arrow-trend-up text-xs"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <span class="text-[10px] font-mono uppercase text-zinc-400 block" id="inflowLabel">UPI INFLOW</span>
+                            <span id="heroIncome" class="font-mono text-sm font-bold text-white truncate block privacy-target">₹0</span>
+                        </div>
+                    </div>
+                    <div class="glass-card rounded-2xl p-3 flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-xl bg-neonCoral/15 border border-neonCoral/30 flex items-center justify-center text-neonCoral shrink-0">
+                            <i class="fa-solid fa-arrow-trend-down text-xs"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <span class="text-[10px] font-mono uppercase text-zinc-400 block" id="outflowLabel">UPI OUTFLOW</span>
+                            <span id="heroExpense" class="font-mono text-sm font-bold text-white truncate block privacy-target">₹0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Budget Utilization Bar -->
+                <div class="mt-4 pt-3 border-t border-white/[0.08]">
+                    <div class="flex justify-between items-center text-[11px] font-mono mb-1.5">
+                        <span class="text-zinc-300">MONTHLY CAP: <strong id="budgetCapLabel" class="text-white privacy-target">₹25,000</strong></span>
+                        <span id="budgetPercentLabel" class="text-neonTeal font-bold">0% USED</span>
+                    </div>
+                    <div class="w-full h-2 bg-black/50 rounded-full overflow-hidden p-0.5 border border-white/[0.08]">
+                        <div id="budgetProgressBar" class="h-full rounded-full transition-all duration-700 bg-neonTeal" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between items-center text-[10px] font-mono text-zinc-400 mt-1.5">
+                        <span id="budgetRemainingText" class="privacy-target">₹25,000 remaining</span>
+                        <span id="daysLeftText">15 days left</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1-Tap Quick Log Presets -->
+            <div>
+                <div class="flex items-center justify-between mb-2.5">
+                    <span class="text-[10px] font-mono uppercase tracking-[0.16em] text-zinc-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-bolt text-neonAmber"></i> 1-TAP INSTANT LOG
+                    </span>
+                    <button onclick="openPresetModal()" class="text-[10px] font-mono text-neonTeal hover:underline">+ CUSTOMIZE</button>
+                </div>
+                <div id="quickPresetsBar" class="flex space-x-2.5 overflow-x-auto no-scrollbar pb-1"></div>
+            </div>
+
+            <!-- Smart Transaction Feed Controls -->
+            <div class="space-y-3 pt-1">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-mono uppercase tracking-[0.16em] text-zinc-300 font-semibold">TRANSACTION FEED</h3>
+                    <span id="txCountLabel" class="text-[10px] font-mono text-zinc-500">0 RECORDS</span>
+                </div>
+
+                <!-- Search & Sort Row -->
+                <div class="flex space-x-2">
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs"></i>
+                        <input type="text" id="searchInput" oninput="renderAll()" placeholder="Search notes, category, mode..." class="w-full glass-card rounded-2xl py-2.5 pl-9 pr-3 text-xs text-white placeholder-zinc-400 focus:outline-none focus:border-neonTeal/50">
+                    </div>
+                    <select id="sortSelector" onchange="renderAll()" class="glass-card rounded-2xl px-3 py-2.5 text-xs font-mono text-zinc-200 focus:outline-none focus:border-neonTeal/50">
+                        <option value="newest" class="bg-obsidian text-white">NEWEST</option>
+                        <option value="highest" class="bg-obsidian text-white">HIGH ₹</option>
+                        <option value="lowest" class="bg-obsidian text-white">LOW ₹</option>
+                    </select>
+                </div>
+
+                <!-- Interactive Filter Pills -->
+                <div class="flex space-x-1.5 overflow-x-auto no-scrollbar pb-1" id="modeFilterPills">
+                    <button onclick="setFeedFilter('mode', 'ALL')" data-mode="ALL" class="mode-pill px-3 py-1.5 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-neonTeal text-obsidian font-bold transition">ALL</button>
+                    <button onclick="setFeedFilter('mode', 'UPI')" data-mode="UPI" class="mode-pill px-3 py-1.5 rounded-xl text-[10px] font-mono uppercase tracking-wider glass-card text-zinc-300 transition">⚡ UPI</button>
+                    <button onclick="setFeedFilter('mode', 'CASH')" data-mode="CASH" class="mode-pill px-3 py-1.5 rounded-xl text-[10px] font-mono uppercase tracking-wider glass-card text-zinc-300 transition">💵 CASH</button>
+                    <button onclick="setFeedFilter('mode', 'CARD')" data-mode="CARD" class="mode-pill px-3 py-1.5 rounded-xl text-[10px] font-mono uppercase tracking-wider glass-card text-zinc-300 transition">💳 CARD</button>
+                    <button id="activeCategoryFilterChip" onclick="clearCategoryFilter()" class="hidden px-3 py-1.5 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-neonCoral/20 text-neonCoral border border-neonCoral/40 flex items-center space-x-1">
+                        <span id="activeCategoryFilterName">Category</span>
+                        <i class="fa-solid fa-xmark ml-1"></i>
+                    </button>
+                </div>
+
+                <!-- Transactions List -->
+                <div id="transactionsFeed" class="space-y-2.5"></div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 2: ANALYTICS & INSIGHTS ================= -->
+        <div id="tab-analytics" class="space-y-5 hidden">
+            <div class="glass-card rounded-[26px] p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-xs font-mono uppercase tracking-[0.15em] text-zinc-200 font-bold">SPEND MATRIX</h3>
+                        <p class="text-[10px] text-zinc-400 mt-0.5">Tap any slice or category to filter feed</p>
+                    </div>
+                    <span id="analyticsTotalSpend" class="font-mono text-sm font-bold text-neonCoral privacy-target">₹0</span>
+                </div>
+
+                <div class="flex items-center justify-between gap-4">
+                    <div class="relative w-36 h-36 shrink-0 flex items-center justify-center">
+                        <canvas id="categoryDoughnutChart" class="w-full h-full"></canvas>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-2">
+                            <span class="text-[9px] font-mono uppercase tracking-wider text-zinc-400 truncate max-w-full" id="doughnutCenterTitle">TOP SPEND</span>
+                            <span class="font-mono text-sm font-extrabold text-white mt-0.5 privacy-target" id="doughnutCenterValue">₹0</span>
+                        </div>
+                    </div>
+
+                    <div id="customDoughnutLegend" class="flex-1 space-y-2 min-w-0"></div>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-[26px] p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <h3 class="text-xs font-mono uppercase tracking-[0.15em] text-zinc-200 font-bold">7-DAY BURN VELOCITY</h3>
+                        <p class="text-[10px] text-zinc-400 mt-0.5">Daily expense pulse over past week</p>
+                    </div>
+                    <span id="sevenDayAvgLabel" class="text-[10px] font-mono bg-white/10 px-2.5 py-1 rounded-lg text-zinc-200">AVG: ₹0/d</span>
+                </div>
+                <div class="h-44 w-full relative">
+                    <canvas id="weeklyTrendChart" class="w-full h-full"></canvas>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-[26px] p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xs font-mono uppercase tracking-[0.15em] text-zinc-200 font-bold">CATEGORY CAPS</h3>
+                        <p class="text-[10px] text-zinc-400 mt-0.5">Tap any category limit to adjust cap</p>
+                    </div>
+                </div>
+                <div id="categoryCapsContainer" class="space-y-3.5"></div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 3: IOU & SPLIT-BILL LEDGER ================= -->
+        <div id="tab-iou" class="space-y-5 hidden">
+            <div class="hero-card rounded-[26px] p-5 flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] font-mono uppercase tracking-[0.18em] text-neonAmber block">PEER LEDGER & IOUs</span>
+                    <h3 id="totalIouNet" class="font-mono text-2xl font-extrabold text-white mt-1 privacy-target">₹0</h3>
+                    <p class="text-[11px] text-zinc-300 mt-1">Pending dues from split bills & friend lending</p>
+                </div>
+                <button onclick="openNewIouModal()" class="px-3.5 py-2.5 rounded-2xl bg-neonAmber text-obsidian font-mono font-bold text-xs btn-press shadow-lg">
+                    + NEW IOU
+                </button>
+            </div>
+
+            <div id="iouListContainer" class="space-y-3.5"></div>
+        </div>
+
+        <!-- ================= TAB 4: AUTO-BURN RADAR / SUBSCRIPTIONS ================= -->
+        <div id="tab-radar" class="space-y-5 hidden">
+            <div class="hero-card rounded-[26px] p-5 flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] font-mono uppercase tracking-[0.18em] text-neonTeal block">AUTO-BURN RADAR</span>
+                    <h3 id="totalMonthlySubs" class="font-mono text-2xl font-extrabold text-white mt-1 privacy-target">₹0/mo</h3>
+                    <p class="text-[11px] text-zinc-300 mt-1">Fixed automated recurring outflows deducted from safe burn</p>
+                </div>
+                <button onclick="openNewSubModal()" class="px-3.5 py-2.5 rounded-2xl bg-neonTeal text-obsidian font-mono font-bold text-xs btn-press shadow-lg glow-teal">
+                    + SUB
+                </button>
+            </div>
+
+            <div id="subscriptionsListContainer" class="space-y-3.5"></div>
+        </div>
+
+        <!-- ================= TAB 5: GOALS / SINKING FUNDS (VAULT) ================= -->
+        <div id="tab-goals" class="space-y-5 hidden">
+            <div class="hero-card rounded-[26px] p-5 flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] font-mono uppercase tracking-[0.18em] text-neonTeal block">SINKING FUNDS VAULT</span>
+                    <h3 id="totalGoalsSaved" class="font-mono text-2xl font-extrabold text-white mt-1 privacy-target">₹0</h3>
+                    <p class="text-[11px] text-zinc-300 mt-1">Dedicated stashes for upcoming gear & goals</p>
+                </div>
+                <button onclick="openNewGoalModal()" class="px-3.5 py-2.5 rounded-2xl bg-neonTeal text-obsidian font-mono font-bold text-xs btn-press shadow-lg glow-teal">
+                    + NEW GOAL
+                </button>
+            </div>
+
+            <div id="goalsListContainer" class="space-y-3.5"></div>
+        </div>
+
+    </main>
+
+    <!-- ================= APPLE MUSIC / IOS 18 LIQUID GLASS BOTTOM DOCK ================= -->
+    <div class="fixed bottom-4 left-4 right-4 max-w-[408px] mx-auto flex items-center gap-3 z-40">
+        <!-- Main Pill Track with Sliding 3D Liquid Glass Lens -->
+        <nav id="dockTrack" class="apple-dock-track flex-1 h-16 rounded-full p-1.5 flex items-center justify-between relative">
+            <!-- Gliding Convex Liquid Glass Bubble -->
+            <div id="dockActiveBubble" class="liquid-glass-bubble"></div>
+
+            <button onclick="switchTab('home')" id="nav-home" class="dock-tab-btn active-tab flex-1 h-full flex flex-col items-center justify-center space-y-0.5 rounded-full text-zinc-400">
+                <i class="fa-solid fa-layer-group text-sm"></i>
+                <span class="text-[9px] font-sans font-semibold tracking-tight">Feed</span>
+            </button>
+
+            <button onclick="switchTab('analytics')" id="nav-analytics" class="dock-tab-btn flex-1 h-full flex flex-col items-center justify-center space-y-0.5 rounded-full text-zinc-400">
+                <i class="fa-solid fa-chart-pie text-sm"></i>
+                <span class="text-[9px] font-sans font-semibold tracking-tight">Matrix</span>
+            </button>
+
+            <button onclick="switchTab('iou')" id="nav-iou" class="dock-tab-btn flex-1 h-full flex flex-col items-center justify-center space-y-0.5 rounded-full text-zinc-400">
+                <i class="fa-solid fa-receipt text-sm"></i>
+                <span class="text-[9px] font-sans font-semibold tracking-tight">IOU</span>
+            </button>
+
+            <button onclick="switchTab('radar')" id="nav-radar" class="dock-tab-btn flex-1 h-full flex flex-col items-center justify-center space-y-0.5 rounded-full text-zinc-400">
+                <i class="fa-solid fa-satellite-dish text-sm"></i>
+                <span class="text-[9px] font-sans font-semibold tracking-tight">Radar</span>
+            </button>
+        </nav>
+
+        <!-- Detached Floating Glass Orb Button -->
+        <button onclick="openNumpadModal()" class="apple-orb-btn w-16 h-16 rounded-full flex items-center justify-center text-white shrink-0">
+            <i class="fa-solid fa-plus text-xl"></i>
+        </button>
+    </div>
+
+    <!-- ================= EDIT WALLET BALANCE MODAL ================= -->
+    <div id="editBalanceModal" class="glass-modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div class="w-full max-w-sm hero-card rounded-3xl p-5 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between">
+                <h3 class="font-mono text-xs uppercase tracking-widest text-neonTeal font-bold">EDIT WALLET BALANCES</h3>
+                <button onclick="closeEditBalanceModal()" class="w-7 h-7 rounded-full glass-card text-zinc-300 flex items-center justify-center"><i class="fa-solid fa-xmark text-xs"></i></button>
+            </div>
+            <p class="text-[11px] text-zinc-300 leading-relaxed">Set your exact current <strong class="text-white">UPI</strong> and <strong class="text-white">Hand Cash</strong> balances. FLUX OS will automatically calibrate your wallet starting balances so your live amounts match reality.</p>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="text-[10px] font-mono uppercase text-neonTeal block mb-1">⚡ CURRENT UPI BALANCE (₹)</label>
+                    <input type="number" id="editUpiBalanceInput" class="w-full glass-card border border-white/15 rounded-xl px-3.5 py-2.5 font-mono text-base font-bold text-white focus:outline-none focus:border-neonTeal" inputmode="numeric">
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase text-neonAmber block mb-1">💵 CURRENT HAND CASH BALANCE (₹)</label>
+                    <input type="number" id="editCashBalanceInput" class="w-full glass-card border border-white/15 rounded-xl px-3.5 py-2.5 font-mono text-base font-bold text-white focus:outline-none focus:border-neonAmber" inputmode="numeric">
+                </div>
+            </div>
+
+            <button onclick="saveEditedBalances()" class="w-full py-3 rounded-xl bg-neonTeal text-obsidian font-mono font-bold text-xs btn-press">SYNC BALANCES</button>
+        </div>
+    </div>
+
+    <!-- ================= CASH <-> UPI EXCHANGE MODAL ================= -->
+    <div id="exchangeModal" class="glass-modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div class="w-full max-w-sm hero-card rounded-3xl p-5 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between">
+                <h3 class="font-mono text-xs uppercase tracking-widest text-neonAmber font-bold">CASH & UPI EXCHANGE</h3>
+                <button onclick="closeExchangeModal()" class="w-7 h-7 rounded-full glass-card text-zinc-300 flex items-center justify-center"><i class="fa-solid fa-xmark text-xs"></i></button>
+            </div>
+            <div>
+                <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">EXCHANGE DIRECTION</label>
+                <select id="exchangeDirection" class="w-full glass-card border border-white/15 rounded-xl px-3 py-2.5 font-mono text-xs text-white focus:outline-none focus:border-neonTeal">
+                    <option value="cash_to_upi" class="bg-obsidian text-white">Gave Hand Cash → Received in UPI (+UPI / -Cash)</option>
+                    <option value="upi_to_cash" class="bg-obsidian text-white">Sent UPI → Got Hand Cash (-UPI / +Cash)</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">AMOUNT (₹)</label>
+                <input type="number" id="exchangeAmountInput" placeholder="500" class="w-full glass-card border border-white/15 rounded-xl px-3.5 py-2.5 font-mono text-base font-bold text-white focus:outline-none focus:border-neonTeal" inputmode="numeric">
+            </div>
+            <p class="text-[10px] text-zinc-400">This automatically updates both your UPI balance and Hand Cash balance without inflating your monthly expense cap.</p>
+            <button onclick="executeCashExchange()" class="w-full py-3 rounded-xl bg-neonAmber text-obsidian font-mono font-bold text-xs btn-press">EXECUTE EXCHANGE</button>
+        </div>
+    </div>
+
+    <!-- ================= NEW IOU MODAL ================= -->
+    <div id="iouModal" class="glass-modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div class="w-full max-w-sm hero-card rounded-3xl p-5 space-y-3.5 shadow-2xl">
+            <div class="flex items-center justify-between">
+                <h3 class="font-mono text-xs uppercase tracking-widest text-neonAmber font-bold">LOG PENDING IOU / SPLIT</h3>
+                <button onclick="closeNewIouModal()" class="w-7 h-7 rounded-full glass-card text-zinc-300 flex items-center justify-center"><i class="fa-solid fa-xmark text-xs"></i></button>
+            </div>
+            <div>
+                <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">DIRECTION</label>
+                <select id="iouTypeInput" class="w-full glass-card border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                    <option value="lent" class="bg-obsidian text-white">They Owe Me (Lent Money / Paid Bill)</option>
+                    <option value="borrowed" class="bg-obsidian text-white">I Owe Them (Borrowed / Split Owed)</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">FRIEND / PERSON NAME</label>
+                <input type="text" id="iouPersonInput" placeholder="Lokghesh" class="w-full glass-card border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-neonTeal">
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+                <div>
+                    <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">AMOUNT (₹)</label>
+                    <input type="number" id="iouAmountInput" placeholder="450" class="w-full glass-card border border-white/15 rounded-xl px-3 py-2 font-mono text-xs text-white focus:outline-none focus:border-neonTeal">
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">WALLET SETTLE MODE</label>
+                    <select id="iouModeInput" class="w-full glass-card border border-white/15 rounded-xl px-3 py-2 font-mono text-xs text-white focus:outline-none">
+                        <option value="UPI" class="bg-obsidian text-white">UPI</option>
+                        <option value="CASH" class="bg-obsidian text-white">CASH</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">NOTE / REASON</label>
+                <input type="text" id="iouNoteInput" placeholder="Dinner Split at Hotel" class="w-full glass-card border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-neonTeal">
+            </div>
+            <button onclick="saveNewIou()" class="w-full py-3 rounded-xl bg-neonAmber text-obsidian font-mono font-bold text-xs btn-press">SAVE IOU RECORD</button>
+        </div>
+    </div>
+
+    <!-- ================= NEW SUBSCRIPTION MODAL ================= -->
+    <div id="subModal" class="glass-modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div class="w-full max-w-sm hero-card rounded-3xl p-5 space-y-3.5 shadow-2xl">
+            <div class="flex items-center justify-between">
+                <h3 class="font-mono text-xs uppercase tracking-widest text-neonTeal font-bold">ADD RECURRING SUBSCRIPTION</h3>
+                <button onclick="closeNewSubModal()" class="w-7 h-7 rounded-full glass-card text-zinc-300 flex items-center justify-center"><i class="fa-solid fa-xmark text-xs"></i></button>
+            </div>
+            <div>
+                <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">SERVICE NAME</label>
+                <input type="text" id="subTitleInput" placeholder="Gym Membership / Spotify" class="w-full glass-card border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-neonTeal">
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+                <div>
+                    <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">AMOUNT (₹)</label>
+                    <input type="number" id="subAmountInput" placeholder="1200" class="w-full glass-card border border-white/15 rounded-xl px-3 py-2 font-mono text-xs text-white focus:outline-none focus:border-neonTeal">
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">BILLING DAY</label>
+                    <input type="number" id="subDayInput" placeholder="5" min="1" max="31" class="w-full glass-card border border-white/15 rounded-xl px-3 py-2 font-mono text-xs text-white focus:outline-none focus:border-neonTeal">
+                </div>
+            </div>
+            <div>
+                <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">CATEGORY</label>
+                <select id="subCategoryInput" class="w-full glass-card border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                    <option value="Gym & Health" class="bg-obsidian text-white">Gym & Health</option>
+                    <option value="Tech & Gear" class="bg-obsidian text-white">Tech & Gear</option>
+                    <option value="Entertainment" class="bg-obsidian text-white">Entertainment</option>
+                    <option value="Other" class="bg-obsidian text-white">Other</option>
+                </select>
+            </div>
+            <button onclick="saveNewSubscription()" class="w-full py-3 rounded-xl bg-neonTeal text-obsidian font-mono font-bold text-xs btn-press">SAVE SUBSCRIPTION</button>
+        </div>
+    </div>
+
+    <!-- ================= NUMPAD MODAL (APPLE SPATIAL GLASS) ================= -->
+    <div id="numpadModal" class="glass-modal-backdrop fixed inset-0 z-50 hidden flex-col justify-end">
+        <div id="numpadSheet" class="w-full max-w-[440px] mx-auto hero-card rounded-t-[34px] p-5 pb-6 shadow-2xl transform translate-y-full spring-transition max-h-[92%] overflow-y-auto no-scrollbar border-t border-white/20">
+
+            <div class="w-10 h-1 bg-zinc-500 rounded-full mx-auto mb-3"></div>
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex glass-card p-1 rounded-2xl border border-white/12">
+                    <button type="button" id="npTypeExpense" onclick="setNumpadType('expense')" class="px-4 py-1.5 rounded-xl font-mono text-xs font-bold bg-neonCoral text-white shadow transition">OUTFLOW</button>
+                    <button type="button" id="npTypeIncome" onclick="setNumpadType('income')" class="px-4 py-1.5 rounded-xl font-mono text-xs font-bold text-zinc-400 transition">INFLOW</button>
+                </div>
+                <button onclick="closeNumpadModal()" class="w-8 h-8 rounded-full glass-card text-zinc-300 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <div class="glass-card rounded-2xl p-3.5 mb-3 flex items-center justify-between border border-white/15">
+                <div>
+                    <span class="text-[9px] font-mono uppercase tracking-widest text-zinc-400 block" id="calcExpressionPreview">AMOUNT (SUPPORTS + - × ÷)</span>
+                    <div class="flex items-baseline space-x-1 mt-0.5">
+                        <span class="font-mono text-xl font-bold text-zinc-400">₹</span>
+                        <span id="calcMainDisplay" class="font-mono text-3xl font-extrabold text-white tracking-tight">0</span>
+                    </div>
+                </div>
+                <div class="flex flex-col space-y-1">
+                    <div class="flex space-x-1 bg-black/40 p-1 rounded-xl border border-white/[0.1]">
+                        <button type="button" onclick="setNumpadMode('UPI')" data-npmode="UPI" class="np-mode-btn px-2.5 py-1 rounded-lg font-mono text-[10px] font-bold bg-neonTeal text-obsidian">UPI</button>
+                        <button type="button" onclick="setNumpadMode('CASH')" data-npmode="CASH" class="np-mode-btn px-2.5 py-1 rounded-lg font-mono text-[10px] font-bold text-zinc-400">CASH</button>
+                        <button type="button" onclick="setNumpadMode('CARD')" data-npmode="CARD" class="np-mode-btn px-2.5 py-1 rounded-lg font-mono text-[10px] font-bold text-zinc-400">CARD</button>
+                    </div>
+                    <input type="date" id="npDateInput" class="glass-card border border-white/[0.1] rounded-lg px-2 py-1 text-[10px] font-mono text-zinc-200 focus:outline-none text-center">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <span class="text-[9px] font-mono uppercase tracking-widest text-zinc-400 block mb-1.5">SELECT CATEGORY</span>
+                <div id="npCategoryGrid" class="grid grid-cols-4 gap-2"></div>
+            </div>
+
+            <div class="mb-3">
+                <input type="text" id="npNoteInput" placeholder="Add a quick note..." class="w-full glass-card border border-white/15 rounded-xl py-2.5 px-3.5 text-xs text-white placeholder-zinc-400 focus:outline-none focus:border-neonTeal">
+            </div>
+
+            <div class="grid grid-cols-4 gap-2 font-mono">
+                <button type="button" onclick="numpadPress('7')" class="numpad-btn py-3 rounded-2xl text-base font-bold text-white">7</button>
+                <button type="button" onclick="numpadPress('8')" class="numpad-btn py-3 rounded-2xl text-base font-bold text-white">8</button>
+                <button type="button" onclick="numpadPress('9')" class="numpad-btn py-3 rounded-2xl text-base font-bold text-white">9</button>
+                <button type="button" onclick="numpadPress('DEL')" class="numpad-btn py-3 rounded-2xl text-sm font-bold text-neonCoral"><i class="fa-solid fa-delete-left"></i></button>
+
+                <button type="button" onclick="numpadPress('4')" class="numpad-btn py-3 rounded-2xl text-base font-bold text-white">4</button>
+                <button type="button" onclick="numpadPress('5')" class="numpad-btn py-3 rounded-2xl text-base font-bold text-white">5</button>
+                <button type="button" onclick="numpadPress('6')" class="numpad-btn py-3 rounded-2xl text-base font-bold text-white">6</button>
+                <button type="button" onclick="numpadPress('+')" class="numpad-btn py-3 rounded-2xl text-base font-bold text-neonTeal">+</button>
+
+                <button type="button" onclick="numpadPress('1')" class="numpad-btn py-3 rounded-2xl text-base font-bold text-white">1</button>
+                <button type="button" onclick="numpadPress('2')" class="numpad-btn py-3 rounded-2xl text-base font-bold text-white">2</button>
+                <button type="button" onclick="numpadPress('3')" class="numpad-btn py-3 rounded-2xl text-base font-bold text-white">3</button>
+                <button type="button" onclick="numpadPress('-')" class="numpad-btn py-3 rounded-2xl text-base font-bold text-neonTeal">−</button>
+
+                <button type="button" onclick="numpadPress('.')" class="numpad-btn py-3 rounded-2xl text-base font-bold text-white">.</button>
+                <button type="button" onclick="numpadPress('0')" class="numpad-btn py-3 rounded-2xl text-base font-bold text-white">0</button>
+                <button type="button" onclick="numpadPress('*')" class="numpad-btn py-3 rounded-2xl text-sm font-bold text-neonTeal">×</button>
+                <button type="button" onclick="submitNumpadTransaction()" id="npSubmitBtn" class="py-3 rounded-2xl text-xs font-extrabold bg-neonTeal text-obsidian shadow-lg glow-teal btn-press flex items-center justify-center space-x-1">
+                    <span>SAVE</span>
+                    <i class="fa-solid fa-check"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= BUDGET MODAL ================= -->
+    <div id="budgetModal" class="glass-modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div class="w-full max-w-sm hero-card rounded-3xl p-5 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between">
+                <h3 class="font-mono text-xs uppercase tracking-widest text-neonTeal font-bold">CONFIGURE MONTHLY CAP</h3>
+                <button onclick="closeBudgetModal()" class="w-7 h-7 rounded-full glass-card text-zinc-300 flex items-center justify-center"><i class="fa-solid fa-xmark text-xs"></i></button>
+            </div>
+            <div>
+                <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">OVERALL MONTHLY BUDGET (₹)</label>
+                <input type="number" id="overallBudgetInput" class="w-full glass-card border border-white/15 rounded-xl px-3.5 py-2.5 font-mono text-base font-bold text-white focus:outline-none focus:border-neonTeal">
+            </div>
+            <button onclick="saveOverallBudget()" class="w-full py-3 rounded-xl bg-neonTeal text-obsidian font-mono font-bold text-xs btn-press">UPDATE BUDGET</button>
+        </div>
+    </div>
+
+    <!-- ================= PRESET MODAL ================= -->
+    <div id="presetModal" class="glass-modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div class="w-full max-w-sm hero-card rounded-3xl p-5 space-y-3.5 shadow-2xl">
+            <div class="flex items-center justify-between">
+                <h3 class="font-mono text-xs uppercase tracking-widest text-neonAmber font-bold">ADD 1-TAP PRESET</h3>
+                <button onclick="closePresetModal()" class="w-7 h-7 rounded-full glass-card text-zinc-300 flex items-center justify-center"><i class="fa-solid fa-xmark text-xs"></i></button>
+            </div>
+            <div>
+                <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">LABEL</label>
+                <input type="text" id="presetLabelInput" placeholder="Protein Shake" class="w-full glass-card border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-neonTeal">
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+                <div>
+                    <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">AMOUNT (₹)</label>
+                    <input type="number" id="presetAmountInput" placeholder="150" class="w-full glass-card border border-white/15 rounded-xl px-3 py-2 font-mono text-xs text-white focus:outline-none focus:border-neonTeal">
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">MODE</label>
+                    <select id="presetModeInput" class="w-full glass-card border border-white/15 rounded-xl px-3 py-2 font-mono text-xs text-white focus:outline-none">
+                        <option value="UPI" class="bg-obsidian text-white">UPI</option>
+                        <option value="CASH" class="bg-obsidian text-white">CASH</option>
+                        <option value="CARD" class="bg-obsidian text-white">CARD</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">CATEGORY</label>
+                <select id="presetCategoryInput" class="w-full glass-card border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                    <option value="Food & Dining" class="bg-obsidian text-white">Food & Dining</option>
+                    <option value="Fuel & Ride" class="bg-obsidian text-white">Fuel & Ride</option>
+                    <option value="Travel & Transit" class="bg-obsidian text-white">Travel & Transit</option>
+                    <option value="Gym & Health" class="bg-obsidian text-white">Gym & Health</option>
+                    <option value="Tech & Gear" class="bg-obsidian text-white">Tech & Gear</option>
+                    <option value="Shopping" class="bg-obsidian text-white">Shopping</option>
+                    <option value="Entertainment" class="bg-obsidian text-white">Entertainment</option>
+                    <option value="Other" class="bg-obsidian text-white">Other</option>
+                </select>
+            </div>
+            <button onclick="saveNewPreset()" class="w-full py-3 rounded-xl bg-neonTeal text-obsidian font-mono font-bold text-xs btn-press">CREATE 1-TAP CHIP</button>
+        </div>
+    </div>
+
+    <!-- ================= GOAL MODAL ================= -->
+    <div id="goalModal" class="glass-modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div class="w-full max-w-sm hero-card rounded-3xl p-5 space-y-3.5 shadow-2xl">
+            <div class="flex items-center justify-between">
+                <h3 class="font-mono text-xs uppercase tracking-widest text-neonTeal font-bold">NEW SINKING FUND GOAL</h3>
+                <button onclick="closeNewGoalModal()" class="w-7 h-7 rounded-full glass-card text-zinc-300 flex items-center justify-center"><i class="fa-solid fa-xmark text-xs"></i></button>
+            </div>
+            <div>
+                <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">GOAL TITLE</label>
+                <input type="text" id="goalTitleInput" placeholder="Bike Exhaust & Riding Jacket" class="w-full glass-card border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-neonTeal">
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+                <div>
+                    <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">TARGET (₹)</label>
+                    <input type="number" id="goalTargetInput" placeholder="15000" class="w-full glass-card border border-white/15 rounded-xl px-3 py-2 font-mono text-xs text-white focus:outline-none focus:border-neonTeal">
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase text-zinc-300 block mb-1">SAVED SO FAR (₹)</label>
+                    <input type="number" id="goalSavedInput" placeholder="2500" class="w-full glass-card border border-white/15 rounded-xl px-3 py-2 font-mono text-xs text-white focus:outline-none focus:border-neonTeal">
+                </div>
+            </div>
+            <button onclick="saveNewGoal()" class="w-full py-3 rounded-xl bg-neonTeal text-obsidian font-mono font-bold text-xs btn-press">CREATE VAULT GOAL</button>
+        </div>
+    </div>
+
+    <!-- ================= DATA BACKUP MODAL ================= -->
+    <div id="dataModal" class="glass-modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div class="w-full max-w-sm hero-card rounded-3xl p-5 space-y-3 shadow-2xl">
+            <div class="flex items-center justify-between">
+                <h3 class="font-mono text-xs uppercase tracking-widest text-white font-bold">DATA VAULT & EXPORT</h3>
+                <button onclick="closeDataModal()" class="w-7 h-7 rounded-full glass-card text-zinc-300 flex items-center justify-center"><i class="fa-solid fa-xmark text-xs"></i></button>
+            </div>
+            <button onclick="exportCSV()" class="w-full py-2.5 px-4 rounded-xl glass-card border border-white/12 hover:border-neonTeal text-white font-mono text-xs flex items-center justify-between transition">
+                <span><i class="fa-solid fa-file-csv text-neonTeal mr-2"></i> Export Transactions (.CSV)</span>
+                <i class="fa-solid fa-arrow-right text-[10px] text-zinc-400"></i>
+            </button>
+            <button onclick="exportJSON()" class="w-full py-2.5 px-4 rounded-xl glass-card border border-white/12 hover:border-neonTeal text-white font-mono text-xs flex items-center justify-between transition">
+                <span><i class="fa-solid fa-code text-neonAmber mr-2"></i> Full Backup (.JSON)</span>
+                <i class="fa-solid fa-download text-[10px] text-zinc-400"></i>
+            </button>
+            <label class="w-full py-2.5 px-4 rounded-xl glass-card border border-white/12 hover:border-neonTeal text-white font-mono text-xs flex items-center justify-between transition cursor-pointer">
+                <span><i class="fa-solid fa-file-import text-neonPurple mr-2"></i> Restore JSON Backup</span>
+                <i class="fa-solid fa-upload text-[10px] text-zinc-400"></i>
+                <input type="file" accept=".json" onchange="importJSON(event)" class="hidden">
+            </label>
+            <div class="pt-2 border-t border-white/10 flex space-x-2">
+                <button onclick="resetToDemoData()" class="flex-1 py-2.5 rounded-xl glass-card hover:bg-white/10 text-zinc-200 font-mono text-[11px] transition">LOAD DEMO</button>
+                <button onclick="wipeAllData()" class="flex-1 py-2.5 rounded-xl bg-neonCoral/20 hover:bg-neonCoral/30 text-neonCoral border border-neonCoral/40 font-mono text-[11px] transition">WIPE ALL</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= TOAST NOTIFICATION ================= -->
+    <div id="toastBar" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 glass-card text-white px-4 py-2.5 rounded-2xl shadow-2xl flex items-center space-x-3 transition-all duration-300 opacity-0 pointer-events-none -translate-y-3">
+        <span id="toastIcon" class="w-2 h-2 rounded-full bg-neonTeal"></span>
+        <span id="toastText" class="text-xs font-mono">Logged</span>
+        <button id="toastUndoBtn" onclick="undoLastAction()" class="hidden text-[10px] font-mono font-bold text-neonAmber border border-neonAmber/40 px-2 py-0.5 rounded-lg hover:bg-neonAmber/10">UNDO</button>
+    </div>
+
+</div>
+
+<!-- ================= APP LOGIC & ENGINE ================= -->
+<script>
+    const CATEGORIES = {
+        expense: [
+            { name: 'Food & Dining', icon: 'fa-bowl-food', color: '#00f5d4', bg: 'bg-teal-500/15 text-neonTeal border-teal-500/30' },
+            { name: 'Fuel & Ride', icon: 'fa-motorcycle', color: '#ff4d6d', bg: 'bg-rose-500/15 text-neonCoral border-rose-500/30' },
+            { name: 'Travel & Transit', icon: 'fa-train-subway', color: '#38bdf8', bg: 'bg-sky-500/15 text-sky-400 border-sky-500/30' },
+            { name: 'Gym & Health', icon: 'fa-dumbbell', color: '#ffb703', bg: 'bg-amber-500/15 text-neonAmber border-amber-500/30' },
+            { name: 'Tech & Gear', icon: 'fa-microchip', color: '#9b5de5', bg: 'bg-purple-500/15 text-purple-400 border-purple-500/30' },
+            { name: 'Shopping', icon: 'fa-bag-shopping', color: '#f472b6', bg: 'bg-pink-500/15 text-pink-400 border-pink-500/30' },
+            { name: 'Entertainment', icon: 'fa-gamepad', color: '#a855f7', bg: 'bg-purple-500/15 text-purple-300 border-purple-500/30' },
+            { name: 'Other', icon: 'fa-layer-group', color: '#a1a1aa', bg: 'bg-zinc-500/15 text-zinc-300 border-zinc-500/30' }
+        ],
+        income: [
+            { name: 'Salary / Stipend', icon: 'fa-building-columns', color: '#00f5d4', bg: 'bg-teal-500/15 text-neonTeal border-teal-500/30' },
+            { name: 'Freelance / Gig', icon: 'fa-laptop-code', color: '#9b5de5', bg: 'bg-purple-500/15 text-purple-400 border-purple-500/30' },
+            { name: 'Cashback / Dividends', icon: 'fa-bolt', color: '#ffb703', bg: 'bg-amber-500/15 text-neonAmber border-amber-500/30' },
+            { name: 'Pocket / Gift', icon: 'fa-gift', color: '#38bdf8', bg: 'bg-sky-500/15 text-sky-400 border-sky-500/30' }
+        ]
+    };
+
+    function daysAgoISO(days) {
+        const d = new Date();
+        d.setDate(d.getDate() - days);
+        return d.toISOString().split('T')[0];
+    }
+
+    function getDefaultTransactions() {
+        return [
+            { id: 'tx1', type: 'income', amount: 15000, category: 'Salary / Stipend', mode: 'UPI', date: daysAgoISO(5), notes: 'Monthly UPI Inflow' },
+            { id: 'tx2', type: 'income', amount: 1000, category: 'Pocket / Gift', mode: 'CASH', date: daysAgoISO(5), notes: 'Initial Hand Cash' },
+            { id: 'tx3', type: 'expense', amount: 300, category: 'Fuel & Ride', mode: 'UPI', date: daysAgoISO(3), notes: 'Bike Petrol' },
+            { id: 'tx4', type: 'expense', amount: 80, category: 'Travel & Transit', mode: 'CASH', date: daysAgoISO(2), notes: 'Metro & Share Auto' },
+            { id: 'tx5', type: 'expense', amount: 180, category: 'Food & Dining', mode: 'UPI', date: daysAgoISO(0), notes: 'Post-workout Meal' }
+        ];
+    }
+
+    const DEFAULT_PRESETS = [
+        { id: 'p1', label: 'Fuel / Bike', amount: 300, category: 'Fuel & Ride', mode: 'UPI', icon: 'fa-gas-pump' },
+        { id: 'p2', label: 'Metro / Bus', amount: 50, category: 'Travel & Transit', mode: 'UPI', icon: 'fa-train-subway' },
+        { id: 'p3', label: 'Gym / Diet', amount: 150, category: 'Gym & Health', mode: 'UPI', icon: 'fa-dumbbell' },
+        { id: 'p4', label: 'Tea / Snack', amount: 30, category: 'Food & Dining', mode: 'CASH', icon: 'fa-mug-hot' }
+    ];
+
+    const DEFAULT_GOALS = [
+        { id: 'g1', title: 'Bike Exhaust & Riding Gear', target: 18000, saved: 7500, icon: 'fa-helmet-safety', color: '#00f5d4' },
+        { id: 'g2', title: 'Workstation Upgrade', target: 24000, saved: 11200, icon: 'fa-display', color: '#9b5de5' }
+    ];
+
+    const DEFAULT_CAPS = {
+        'Food & Dining': 6000,
+        'Fuel & Ride': 3500,
+        'Travel & Transit': 2000,
+        'Gym & Health': 4000,
+        'Tech & Gear': 5000,
+        'Shopping': 4000
+    };
+
+    let state = {
+        transactions: JSON.parse(localStorage.getItem('flux_tx')) || getDefaultTransactions(),
+        presets: JSON.parse(localStorage.getItem('flux_presets')) || DEFAULT_PRESETS,
+        goals: JSON.parse(localStorage.getItem('flux_goals')) || DEFAULT_GOALS,
+        ious: JSON.parse(localStorage.getItem('flux_ious')) || [
+            { id: 'iou1', type: 'lent', person: 'Lokghesh', amount: 350, mode: 'UPI', date: daysAgoISO(1), notes: 'Petrol split' }
+        ],
+        subscriptions: JSON.parse(localStorage.getItem('flux_subs')) || [
+            { id: 'sub1', title: 'Gym Membership', amount: 1500, day: 5, category: 'Gym & Health', icon: 'fa-dumbbell' },
+            { id: 'sub2', title: 'Spotify Premium', amount: 119, day: 12, category: 'Entertainment', icon: 'fa-music' }
+        ],
+        categoryCaps: JSON.parse(localStorage.getItem('flux_caps')) || DEFAULT_CAPS,
+        monthlyBudget: Number(localStorage.getItem('flux_budget')) || 25000,
+        upiOffset: Number(localStorage.getItem('flux_upi_offset')) || 0,
+        cashOffset: Number(localStorage.getItem('flux_cash_offset')) || 0,
+        selectedMonth: new Date().toISOString().slice(0, 7),
+        privacyMode: false,
+        walletMode: 'UPI',
+        filterMode: 'ALL',
+        filterCategory: null,
+        activeTab: 'home',
+        npExpression: '0',
+        npType: 'expense',
+        npMode: 'UPI',
+        npCategory: 'Food & Dining',
+        editingTxId: null,
+        lastUndoTx: null
+    };
+
+    let doughnutChartInstance = null;
+    let weeklyChartInstance = null;
+    let animatedValues = { net: 0, income: 0, expense: 0 };
+
+    window.onload = function() {
+        populateMonthSelector();
+        renderPresets();
+        renderAll();
+        initCharts();
+        setTimeout(() => moveDockBubble('home'), 40);
+
+        // --- NEW: Register Service Worker for Offline Mode ---
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+            .then((reg) => console.log('FLUX OS Offline Engine Active!', reg.scope))
+            .catch((err) => console.error('Service Worker registration failed:', err));
+        }
+    };
+
+    window.addEventListener('resize', () => moveDockBubble(state.activeTab));
+
+    function moveDockBubble(tab) {
+        const btn = document.getElementById(`nav-${tab}`);
+        const bubble = document.getElementById('dockActiveBubble');
+        if (!btn || !bubble) return;
+        bubble.style.width = `${btn.offsetWidth}px`;
+        bubble.style.transform = `translateX(${btn.offsetLeft}px)`;
+    }
+
+    function saveState() {
+        localStorage.setItem('flux_tx', JSON.stringify(state.transactions));
+        localStorage.setItem('flux_presets', JSON.stringify(state.presets));
+        localStorage.setItem('flux_goals', JSON.stringify(state.goals));
+        localStorage.setItem('flux_ious', JSON.stringify(state.ious));
+        localStorage.setItem('flux_subs', JSON.stringify(state.subscriptions));
+        localStorage.setItem('flux_caps', JSON.stringify(state.categoryCaps));
+        localStorage.setItem('flux_budget', state.monthlyBudget.toString());
+        localStorage.setItem('flux_upi_offset', state.upiOffset.toString());
+        localStorage.setItem('flux_cash_offset', state.cashOffset.toString());
+    }
+
+    function formatINR(num) {
+        const n = Math.round(Number(num) || 0);
+        return '₹' + n.toLocaleString('en-IN');
+    }
+
+    function animateCounter(elId, startVal, endVal, prefix = '₹', suffix = '') {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        const duration = 450;
+        const startTime = performance.now();
+        function tick(now) {
+            const progress = Math.min((now - startTime) / duration, 1);
+            const ease = 1 - Math.pow(1 - progress, 3);
+            const current = Math.round(startVal + (endVal - startVal) * ease);
+            el.innerText = `${prefix}${current.toLocaleString('en-IN')}${suffix}`;
+            if (progress < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+    }
+
+    function getWalletMetrics(monthTx) {
+        let upiIn = 0, upiOut = 0, cashIn = 0, cashOut = 0;
+        monthTx.forEach(t => {
+            const amt = Number(t.amount) || 0;
+            if (t.mode === 'CASH') {
+                if (t.type === 'income') cashIn += amt;
+                else cashOut += amt;
+            } else {
+                if (t.type === 'income') upiIn += amt;
+                else upiOut += amt;
+            }
+        });
+        return {
+            upiIn,
+            upiOut,
+            upiNet: state.upiOffset + upiIn - upiOut,
+            cashIn,
+            cashOut,
+            cashNet: state.cashOffset + cashIn - cashOut
+        };
+    }
+
+    function setWalletMode(mode) {
+        state.walletMode = mode;
+        const btnUPI = document.getElementById('walletBtnUPI');
+        const btnCash = document.getElementById('walletBtnCash');
+        if (mode === 'UPI') {
+            btnUPI.className = 'px-2.5 py-1 rounded-lg font-mono text-[10px] font-bold bg-neonTeal text-obsidian transition';
+            btnCash.className = 'px-2.5 py-1 rounded-lg font-mono text-[10px] font-bold text-zinc-400 transition';
+        } else {
+            btnCash.className = 'px-2.5 py-1 rounded-lg font-mono text-[10px] font-bold bg-neonAmber text-obsidian transition';
+            btnUPI.className = 'px-2.5 py-1 rounded-lg font-mono text-[10px] font-bold text-zinc-400 transition';
+        }
+        renderAll();
+    }
+
+    function toggleWalletMode() {
+        setWalletMode(state.walletMode === 'UPI' ? 'CASH' : 'UPI');
+    }
+
+    function openEditBalanceModal() {
+        const monthTx = state.transactions.filter(t => t.date && t.date.startsWith(state.selectedMonth));
+        const m = getWalletMetrics(monthTx);
+        document.getElementById('editUpiBalanceInput').value = m.upiNet;
+        document.getElementById('editCashBalanceInput').value = m.cashNet;
+        document.getElementById('editBalanceModal').classList.remove('hidden');
+        document.getElementById('editBalanceModal').classList.add('flex');
+    }
+
+    function closeEditBalanceModal() {
+        document.getElementById('editBalanceModal').classList.add('hidden');
+        document.getElementById('editBalanceModal').classList.remove('flex');
+    }
+
+    function saveEditedBalances() {
+        const monthTx = state.transactions.filter(t => t.date && t.date.startsWith(state.selectedMonth));
+        const m = getWalletMetrics(monthTx);
+
+        const desiredUpi = Number(document.getElementById('editUpiBalanceInput').value);
+        const desiredCash = Number(document.getElementById('editCashBalanceInput').value);
+
+        if (!isNaN(desiredUpi)) {
+            state.upiOffset = desiredUpi - (m.upiIn - m.upiOut);
+        }
+        if (!isNaN(desiredCash)) {
+            state.cashOffset = desiredCash - (m.cashIn - m.cashOut);
+        }
+
+        saveState();
+        renderAll();
+        closeEditBalanceModal();
+        showToast('UPI & Hand Cash balances updated');
+    }
+
+    function openExchangeModal() {
+        document.getElementById('exchangeModal').classList.remove('hidden');
+        document.getElementById('exchangeModal').classList.add('flex');
+    }
+    function closeExchangeModal() {
+        document.getElementById('exchangeModal').classList.add('hidden');
+        document.getElementById('exchangeModal').classList.remove('flex');
+    }
+
+    function executeCashExchange() {
+        const direction = document.getElementById('exchangeDirection').value;
+        const amount = Number(document.getElementById('exchangeAmountInput').value);
+        if (!amount || amount <= 0) {
+            showToast('Enter valid exchange amount', false);
+            return;
+        }
+
+        const now = new Date().toISOString().split('T')[0];
+        const stamp = Date.now();
+
+        if (direction === 'cash_to_upi') {
+            state.transactions.unshift(
+                {
+                    id: 'ex_upi_' + stamp,
+                    type: 'income',
+                    amount: amount,
+                    category: 'Other',
+                    mode: 'UPI',
+                    isExchange: true,
+                    date: now,
+                    notes: 'Exchange: Added Hand Cash to UPI'
+                },
+                {
+                    id: 'ex_cash_' + stamp,
+                    type: 'expense',
+                    amount: amount,
+                    category: 'Other',
+                    mode: 'CASH',
+                    isExchange: true,
+                    date: now,
+                    notes: 'Exchange: Hand Cash converted to UPI'
+                }
+            );
+        } else {
+            state.transactions.unshift(
+                {
+                    id: 'ex_cash_' + stamp,
+                    type: 'income',
+                    amount: amount,
+                    category: 'Other',
+                    mode: 'CASH',
+                    isExchange: true,
+                    date: now,
+                    notes: 'Exchange: Withdrew Hand Cash from UPI'
+                },
+                {
+                    id: 'ex_upi_' + stamp,
+                    type: 'expense',
+                    amount: amount,
+                    category: 'Other',
+                    mode: 'UPI',
+                    isExchange: true,
+                    date: now,
+                    notes: 'Exchange: Sent UPI for Hand Cash'
+                }
+            );
+        }
+
+        saveState();
+        renderAll();
+        closeExchangeModal();
+        document.getElementById('exchangeAmountInput').value = '';
+        showToast(`Exchanged ₹${amount} between wallets`);
+    }
+
+    function populateMonthSelector() {
+        const sel = document.getElementById('monthSelector');
+        const months = new Set([new Date().toISOString().slice(0, 7)]);
+        state.transactions.forEach(t => {
+            if (t.date && t.date.length >= 7) months.add(t.date.slice(0, 7));
+        });
+        const sorted = Array.from(months).sort().reverse();
+        sel.innerHTML = '';
+        sorted.forEach(m => {
+            const [y, mo] = m.split('-');
+            const dateObj = new Date(Number(y), Number(mo) - 1, 1);
+            const label = dateObj.toLocaleString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.innerText = label;
+            opt.className = 'bg-obsidian text-white';
+            sel.appendChild(opt);
+        });
+        sel.value = state.selectedMonth;
+    }
+
+    function handleMonthChange() {
+        state.selectedMonth = document.getElementById('monthSelector').value;
+        renderAll();
+    }
+
+    function switchTab(tab) {
+        state.activeTab = tab;
+        ['home', 'analytics', 'iou', 'radar', 'goals'].forEach(t => {
+            const view = document.getElementById(`tab-${t}`);
+            const nav = document.getElementById(`nav-${t}`);
+            if (!view) return;
+            if (t === tab) {
+                view.classList.remove('hidden');
+                if (nav) nav.classList.add('active-tab');
+            } else {
+                view.classList.add('hidden');
+                if (nav) nav.classList.remove('active-tab');
+            }
+        });
+        moveDockBubble(tab);
+        const mainScroll = document.getElementById('mainScroll');
+        if (mainScroll) mainScroll.scrollTo({ top: 0, behavior: 'smooth' });
+
+        if (tab === 'analytics') {
+            setTimeout(() => {
+                if (doughnutChartInstance) doughnutChartInstance.resize();
+                if (weeklyChartInstance) weeklyChartInstance.resize();
+                updateCharts();
+            }, 50);
+        }
+    }
+
+    function togglePrivacyMode() {
+        state.privacyMode = !state.privacyMode;
+        const icon = document.getElementById('privacyIcon');
+        icon.className = state.privacyMode ? 'fa-solid fa-eye-slash text-xs text-neonTeal' : 'fa-solid fa-eye text-xs';
+        document.querySelectorAll('.privacy-target').forEach(el => {
+            el.classList.toggle('privacy-blur', state.privacyMode);
+        });
+    }
+
+    function renderPresets() {
+        const bar = document.getElementById('quickPresetsBar');
+        bar.innerHTML = '';
+        state.presets.forEach(p => {
+            const chip = document.createElement('div');
+            chip.className = 'shrink-0 glass-card hover:border-white/25 rounded-2xl px-3.5 py-2.5 flex items-center space-x-2.5 cursor-pointer btn-press transition group relative';
+            chip.innerHTML = `
+                <div onclick="executeQuickPreset('${p.id}')" class="flex items-center space-x-2.5">
+                    <div class="w-7 h-7 rounded-xl bg-neonTeal/15 border border-neonTeal/30 flex items-center justify-center text-neonTeal text-xs">
+                        <i class="fa-solid ${p.icon || 'fa-bolt'}"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-semibold text-white block leading-tight">${p.label}</span>
+                        <span class="font-mono text-[10px] text-neonTeal font-bold">₹${p.amount} • ${p.mode}</span>
+                    </div>
+                </div>
+                <button onclick="deletePreset('${p.id}', event)" title="Remove" class="text-zinc-500 hover:text-neonCoral text-[10px] pl-1"><i class="fa-solid fa-xmark"></i></button>
+            `;
+            bar.appendChild(chip);
+        });
+    }
+
+    function executeQuickPreset(presetId) {
+        const p = state.presets.find(x => x.id === presetId);
+        if (!p) return;
+        const newTx = {
+            id: 'tx_' + Date.now(),
+            type: 'expense',
+            amount: Number(p.amount),
+            category: p.category,
+            mode: p.mode,
+            date: new Date().toISOString().split('T')[0],
+            notes: `${p.label} (1-Tap)`
+        };
+        state.transactions.unshift(newTx);
+        state.lastUndoTx = newTx.id;
+        saveState();
+        populateMonthSelector();
+        renderAll();
+        showToast(`⚡ Logged ${p.label} • ₹${p.amount}`, true);
+    }
+
+    function deletePreset(id, e) {
+        e.stopPropagation();
+        state.presets = state.presets.filter(p => p.id !== id);
+        saveState();
+        renderPresets();
+    }
+
+    function openPresetModal() {
+        document.getElementById('presetModal').classList.remove('hidden');
+        document.getElementById('presetModal').classList.add('flex');
+    }
+    function closePresetModal() {
+        document.getElementById('presetModal').classList.add('hidden');
+        document.getElementById('presetModal').classList.remove('flex');
+    }
+    function saveNewPreset() {
+        const label = document.getElementById('presetLabelInput').value.trim();
+        const amount = Number(document.getElementById('presetAmountInput').value);
+        const mode = document.getElementById('presetModeInput').value;
+        const category = document.getElementById('presetCategoryInput').value;
+        if (!label || !amount || amount <= 0) return showToast('Enter valid info', false);
+        state.presets.push({ id: 'p_' + Date.now(), label, amount, mode, category, icon: 'fa-bolt' });
+        saveState();
+        renderPresets();
+        closePresetModal();
+        document.getElementById('presetLabelInput').value = '';
+        document.getElementById('presetAmountInput').value = '';
+        showToast('Preset added');
+    }
+
+    function undoLastAction() {
+        if (!state.lastUndoTx) return;
+        state.transactions = state.transactions.filter(t => t.id !== state.lastUndoTx);
+        state.lastUndoTx = null;
+        saveState();
+        renderAll();
+        showToast('Action undone');
+    }
+
+    function renderAll() {
+        const monthTx = state.transactions.filter(t => t.date && t.date.startsWith(state.selectedMonth));
+        const m = getWalletMetrics(monthTx);
+
+        const activeNet = state.walletMode === 'UPI' ? m.upiNet : m.cashNet;
+        const activeIn = state.walletMode === 'UPI' ? m.upiIn : m.cashIn;
+        const activeOut = state.walletMode === 'UPI' ? m.upiOut : m.cashOut;
+
+        document.getElementById('inflowLabel').innerText = state.walletMode === 'UPI' ? 'UPI INFLOW' : 'CASH INFLOW';
+        document.getElementById('outflowLabel').innerText = state.walletMode === 'UPI' ? 'UPI OUTFLOW' : 'CASH OUTFLOW';
+
+        const otherSummary = document.getElementById('otherWalletSummary');
+        if (state.walletMode === 'UPI') {
+            otherSummary.innerText = `💵 Hand Cash: ${formatINR(m.cashNet)} (Tap to flip)`;
+        } else {
+            otherSummary.innerText = `⚡ UPI Balance: ${formatINR(m.upiNet)} (Tap to flip)`;
+        }
+
+        animateCounter('heroNetBalance', animatedValues.net, activeNet);
+        animateCounter('heroIncome', animatedValues.income, activeIn);
+        animateCounter('heroExpense', animatedValues.expense, activeOut);
+        animatedValues = { net: activeNet, income: activeIn, expense: activeOut };
+
+        const totalRealExpense = monthTx
+            .filter(t => t.type === 'expense' && !t.isExchange)
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+
+        const totalSubs = state.subscriptions.reduce((sum, s) => sum + Number(s.amount), 0);
+        const effectiveBudget = Math.max(0, state.monthlyBudget - totalSubs);
+
+        const now = new Date();
+        const [selYear, selMonth] = state.selectedMonth.split('-').map(Number);
+        const daysInMonth = new Date(selYear, selMonth, 0).getDate();
+        const isCurrentMonth = (now.getFullYear() === selYear && (now.getMonth() + 1) === selMonth);
+        const daysRemaining = isCurrentMonth ? Math.max(1, daysInMonth - now.getDate() + 1) : daysInMonth;
+
+        const remainingBudget = Math.max(0, effectiveBudget - totalRealExpense);
+        const safeDaily = Math.round(remainingBudget / daysRemaining);
+
+        document.getElementById('safeDailyAllowance').innerText = `₹${safeDaily.toLocaleString('en-IN')}/day`;
+        document.getElementById('budgetCapLabel').innerText = formatINR(state.monthlyBudget);
+        document.getElementById('daysLeftText').innerText = `${daysRemaining} days left in cycle`;
+
+        const usedPct = effectiveBudget > 0 ? Math.min(100, Math.round((totalRealExpense / effectiveBudget) * 100)) : 0;
+        document.getElementById('budgetPercentLabel').innerText = `${usedPct}% USED`;
+        document.getElementById('budgetRemainingText').innerText = totalRealExpense <= effectiveBudget
+            ? `${formatINR(remainingBudget)} safe buffer`
+            : `Exceeded by ${formatINR(totalRealExpense - effectiveBudget)}`;
+
+        const bar = document.getElementById('budgetProgressBar');
+        bar.style.width = `${usedPct}%`;
+        bar.className = `h-full rounded-full transition-all duration-700 ${usedPct < 65 ? 'bg-neonTeal' : usedPct < 90 ? 'bg-neonAmber' : 'bg-neonCoral'}`;
+
+        renderTransactionsFeed(monthTx);
+        renderCategoryCaps(monthTx);
+        renderGoals();
+        renderIous();
+        renderSubscriptions();
+        if (doughnutChartInstance && weeklyChartInstance) updateCharts();
+    }
+
+    function setFeedFilter(type, val) {
+        if (type === 'mode') {
+            state.filterMode = val;
+            document.querySelectorAll('.mode-pill').forEach(btn => {
+                btn.className = btn.dataset.mode === val
+                    ? 'mode-pill px-3 py-1.5 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-neonTeal text-obsidian font-bold transition'
+                    : 'mode-pill px-3 py-1.5 rounded-xl text-[10px] font-mono uppercase tracking-wider glass-card text-zinc-300 transition';
+            });
+        }
+        renderAll();
+    }
+
+    function setCategoryFilter(catName) {
+        state.filterCategory = catName;
+        document.getElementById('activeCategoryFilterName').innerText = catName;
+        document.getElementById('activeCategoryFilterChip').classList.remove('hidden');
+        switchTab('home');
+        renderAll();
+        showToast(`Filtered by ${catName}`);
+    }
+
+    function clearCategoryFilter() {
+        state.filterCategory = null;
+        document.getElementById('activeCategoryFilterChip').classList.add('hidden');
+        renderAll();
+    }
+
+    function renderTransactionsFeed(monthTx) {
+        const query = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+        const sortBy = document.getElementById('sortSelector').value;
+
+        let filtered = monthTx.filter(t => {
+            const matchMode = state.filterMode === 'ALL' || (t.mode || 'UPI') === state.filterMode;
+            const matchCat = !state.filterCategory || t.category === state.filterCategory;
+            const matchSearch = !query || (t.notes && t.notes.toLowerCase().includes(query)) || t.category.toLowerCase().includes(query);
+            return matchMode && matchCat && matchSearch;
+        });
+
+        if (sortBy === 'newest') filtered.sort((a, b) => b.date.localeCompare(a.date));
+        else if (sortBy === 'highest') filtered.sort((a, b) => Number(b.amount) - Number(a.amount));
+        else if (sortBy === 'lowest') filtered.sort((a, b) => Number(a.amount) - Number(b.amount));
+
+        document.getElementById('txCountLabel').innerText = `${filtered.length} RECORDS`;
+        const container = document.getElementById('transactionsFeed');
+
+        if (filtered.length === 0) {
+            container.innerHTML = `<div class="glass-card rounded-3xl p-8 text-center space-y-2 border border-dashed border-white/10"><p class="text-xs font-mono uppercase tracking-wider text-zinc-300">NO SIGNALS</p></div>`;
+            return;
+        }
+
+        container.innerHTML = '';
+        const allCats = [...CATEGORIES.expense, ...CATEGORIES.income];
+
+        filtered.forEach((t, idx) => {
+            const isInc = t.type === 'income';
+            const catMeta = allCats.find(c => c.name === t.category) || { icon: 'fa-right-left', bg: 'bg-zinc-500/15 text-zinc-300 border-zinc-500/30' };
+            const item = document.createElement('div');
+            item.style.animationDelay = `${Math.min(idx * 35, 250)}ms`;
+            item.className = 'animate-item glass-card rounded-2xl p-3.5 flex items-center justify-between hover:border-white/25 transition group cursor-pointer';
+            item.onclick = () => toggleTxActions(t.id);
+
+            item.innerHTML = `
+                <div class="flex items-center space-x-3 min-w-0">
+                    <div class="w-10 h-10 rounded-2xl border ${catMeta.bg} flex items-center justify-center text-sm shrink-0">
+                        <i class="fa-solid ${t.isExchange ? 'fa-right-left' : catMeta.icon}"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center space-x-2">
+                            <h4 class="text-xs font-bold text-white truncate">${t.isExchange ? 'Wallet Exchange' : t.category}</h4>
+                            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/[0.08] text-zinc-200">${t.mode || 'UPI'}</span>
+                        </div>
+                        <p class="text-[11px] text-zinc-300 truncate mt-0.5">${t.notes || 'No notes'} • <span class="font-mono text-[10px] text-zinc-400">${t.date}</span></p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2.5 shrink-0 pl-2">
+                    <span class="font-mono text-sm font-extrabold ${isInc ? 'text-neonTeal' : 'text-neonCoral'} ${state.privacyMode ? 'privacy-blur' : ''} privacy-target">
+                        ${isInc ? '+' : '-'}${formatINR(t.amount)}
+                    </span>
+                    <div id="txActions_${t.id}" class="hidden items-center space-x-1">
+                        <button onclick="editTransaction('${t.id}', event)" class="w-7 h-7 rounded-lg glass-card border border-white/10 text-zinc-300 hover:text-neonTeal flex items-center justify-center text-[11px]"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteTransaction('${t.id}', event)" class="w-7 h-7 rounded-lg bg-neonCoral/25 border border-neonCoral/40 text-neonCoral flex items-center justify-center text-[11px]"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function toggleTxActions(id) {
+        const el = document.getElementById(`txActions_${id}`);
+        if (el) { el.classList.toggle('hidden'); el.classList.toggle('flex'); }
+    }
+
+    function deleteTransaction(id, e) {
+        if (e) e.stopPropagation();
+        state.transactions = state.transactions.filter(t => t.id !== id);
+        saveState();
+        renderAll();
+        showToast('Transaction removed');
+    }
+
+    function editTransaction(id, e) {
+        if (e) e.stopPropagation();
+        const tx = state.transactions.find(t => t.id === id);
+        if (tx) openNumpadModal(tx);
+    }
+
+    function openNumpadModal(editTx = null) {
+        const modal = document.getElementById('numpadModal');
+        const sheet = document.getElementById('numpadSheet');
+
+        if (editTx) {
+            state.editingTxId = editTx.id;
+            state.npExpression = String(editTx.amount);
+            state.npType = editTx.type;
+            state.npMode = editTx.mode || 'UPI';
+            state.npCategory = editTx.category;
+            document.getElementById('npDateInput').value = editTx.date;
+            document.getElementById('npNoteInput').value = editTx.notes || '';
+        } else {
+            state.editingTxId = null;
+            state.npExpression = '0';
+            state.npType = 'expense';
+            state.npMode = state.walletMode;
+            state.npCategory = CATEGORIES.expense[0].name;
+            document.getElementById('npDateInput').value = new Date().toISOString().split('T')[0];
+            document.getElementById('npNoteInput').value = '';
+        }
+
+        setNumpadType(state.npType, state.npCategory);
+        setNumpadMode(state.npMode);
+        updateNumpadDisplay();
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => sheet.classList.remove('translate-y-full'), 15);
+    }
+
+    function closeNumpadModal() {
+        const modal = document.getElementById('numpadModal');
+        const sheet = document.getElementById('numpadSheet');
+        sheet.classList.add('translate-y-full');
+        setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
+    }
+
+    function setNumpadType(type, preserveCat = null) {
+        state.npType = type;
+        const expBtn = document.getElementById('npTypeExpense');
+        const incBtn = document.getElementById('npTypeIncome');
+        if (type === 'expense') {
+            expBtn.className = 'px-4 py-1.5 rounded-xl font-mono text-xs font-bold bg-neonCoral text-white shadow transition';
+            incBtn.className = 'px-4 py-1.5 rounded-xl font-mono text-xs font-bold text-zinc-400 transition';
+        } else {
+            incBtn.className = 'px-4 py-1.5 rounded-xl font-mono text-xs font-bold bg-neonTeal text-obsidian shadow transition';
+            expBtn.className = 'px-4 py-1.5 rounded-xl font-mono text-xs font-bold text-zinc-400 transition';
+        }
+        const catList = CATEGORIES[type];
+        state.npCategory = preserveCat && catList.some(c => c.name === preserveCat) ? preserveCat : catList[0].name;
+        renderNumpadCategories();
+    }
+
+    function setNumpadMode(mode) {
+        state.npMode = mode;
+        document.querySelectorAll('.np-mode-btn').forEach(btn => {
+            btn.className = btn.dataset.npmode === mode ? 'np-mode-btn px-2.5 py-1 rounded-lg font-mono text-[10px] font-bold bg-neonTeal text-obsidian' : 'np-mode-btn px-2.5 py-1 rounded-lg font-mono text-[10px] font-bold text-zinc-400';
+        });
+    }
+
+    function renderNumpadCategories() {
+        const grid = document.getElementById('npCategoryGrid');
+        grid.innerHTML = '';
+        CATEGORIES[state.npType].forEach(c => {
+            const isSelected = c.name === state.npCategory;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.onclick = () => { state.npCategory = c.name; renderNumpadCategories(); };
+            btn.className = `p-2.5 rounded-xl border text-center transition flex flex-col items-center justify-center space-y-1 ${isSelected ? 'bg-neonTeal/20 border-neonTeal text-neonTeal scale-[1.03] shadow-md' : 'glass-card border-white/[0.08] text-zinc-300 hover:text-white'}`;
+            btn.innerHTML = `<i class="fa-solid ${c.icon} text-sm"></i><span class="text-[9px] font-mono tracking-tight truncate w-full">${c.name.split(' ')[0]}</span>`;
+            grid.appendChild(btn);
+        });
+    }
+
+    function numpadPress(key) {
+        if (key === 'DEL') {
+            state.npExpression = state.npExpression.length > 1 ? state.npExpression.slice(0, -1) : '0';
+        } else {
+            const operators = ['+', '-', '*'];
+            const lastChar = state.npExpression.slice(-1);
+            if (operators.includes(key) && operators.includes(lastChar)) {
+                state.npExpression = state.npExpression.slice(0, -1) + key;
+            } else if (state.npExpression === '0' && !operators.includes(key) && key !== '.') {
+                state.npExpression = key;
+            } else {
+                state.npExpression += key;
+            }
+        }
+        updateNumpadDisplay();
+    }
+
+    function evaluateMathExpression(expr) {
+        try {
+            const sanitized = expr.replace(/[^0-9+\-*.]/g, '');
+            if (!sanitized) return 0;
+            const val = Function(`"use strict"; return (${sanitized})`)();
+            return isFinite(val) ? Math.max(0, Math.round(val * 100) / 100) : 0;
+        } catch { return 0; }
+    }
+
+    function updateNumpadDisplay() {
+        const mainDisp = document.getElementById('calcMainDisplay');
+        const subDisp = document.getElementById('calcExpressionPreview');
+        const hasOperator = /[+\-*]/.test(state.npExpression);
+        if (hasOperator) {
+            subDisp.innerText = `${state.npExpression.replace(/\*/g, '×')} =`;
+            mainDisp.innerText = evaluateMathExpression(state.npExpression).toLocaleString('en-IN');
+        } else {
+            subDisp.innerText = 'AMOUNT';
+            mainDisp.innerText = state.npExpression;
+        }
+    }
+
+    function submitNumpadTransaction() {
+        const finalAmount = evaluateMathExpression(state.npExpression);
+        if (!finalAmount || finalAmount <= 0) return showToast('Enter valid amount', false);
+
+        const txData = {
+            id: state.editingTxId || ('tx_' + Date.now()),
+            type: state.npType,
+            amount: finalAmount,
+            category: state.npCategory,
+            mode: state.npMode,
+            date: document.getElementById('npDateInput').value || new Date().toISOString().split('T')[0],
+            notes: document.getElementById('npNoteInput').value.trim() || state.npCategory
+        };
+
+        if (state.editingTxId) {
+            const idx = state.transactions.findIndex(t => t.id === state.editingTxId);
+            if (idx !== -1) state.transactions[idx] = txData;
+            showToast('Transaction updated');
+        } else {
+            state.transactions.unshift(txData);
+            state.lastUndoTx = txData.id;
+            showToast(`Saved ${formatINR(finalAmount)} in ${txData.category}`, true);
+        }
+
+        saveState();
+        populateMonthSelector();
+        closeNumpadModal();
+        renderAll();
+    }
+
+    function initCharts() {
+        const dCtx = document.getElementById('categoryDoughnutChart').getContext('2d');
+        doughnutChartInstance = new Chart(dCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [],
+                    borderWidth: 2,
+                    borderColor: '#121216',
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '74%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: true }
+                },
+                onClick: (evt, elements) => {
+                    if (elements.length > 0) {
+                        const clickedCat = doughnutChartInstance.data.labels[elements[0].index];
+                        if (clickedCat && clickedCat !== 'No Data') {
+                            setCategoryFilter(clickedCat);
+                        }
+                    }
+                }
+            }
+        });
+
+        const wCtx = document.getElementById('weeklyTrendChart').getContext('2d');
+        weeklyChartInstance = new Chart(wCtx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Daily Spend (₹)',
+                    data: [],
+                    backgroundColor: '#00f5d4',
+                    borderRadius: 8,
+                    barThickness: 18
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#a1a1aa', font: { family: 'JetBrains Mono', size: 10 } } },
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a1a1aa', font: { family: 'JetBrains Mono', size: 10 } } }
+                }
+            }
+        });
+        updateCharts();
+    }
+
+    function updateCharts() {
+        if (!doughnutChartInstance || !weeklyChartInstance) return;
+        const monthTx = state.transactions.filter(t => t.date && t.date.startsWith(state.selectedMonth) && t.type === 'expense' && !t.isExchange);
+        const catTotals = {};
+        let totalExp = 0;
+        monthTx.forEach(t => {
+            const amt = Number(t.amount) || 0;
+            totalExp += amt;
+            catTotals[t.category] = (catTotals[t.category] || 0) + amt;
+        });
+        document.getElementById('analyticsTotalSpend').innerText = formatINR(totalExp);
+
+        const legendContainer = document.getElementById('customDoughnutLegend');
+        legendContainer.innerHTML = '';
+
+        const entries = Object.entries(catTotals).sort((a, b) => b[1] - a[1]);
+        if (entries.length === 0) {
+            doughnutChartInstance.data.labels = ['No Data'];
+            doughnutChartInstance.data.datasets[0].data = [1];
+            doughnutChartInstance.data.datasets[0].backgroundColor = ['#272732'];
+            document.getElementById('doughnutCenterTitle').innerText = 'NO SPEND';
+            document.getElementById('doughnutCenterValue').innerText = '₹0';
+            legendContainer.innerHTML = `<p class="text-[11px] font-mono text-zinc-400">No expenses logged this month.</p>`;
+        } else {
+            const colors = entries.map(e => {
+                const found = CATEGORIES.expense.find(c => c.name === e[0]);
+                return found ? found.color : '#a1a1aa';
+            });
+
+            doughnutChartInstance.data.labels = entries.map(e => e[0]);
+            doughnutChartInstance.data.datasets[0].data = entries.map(e => e[1]);
+            doughnutChartInstance.data.datasets[0].backgroundColor = colors;
+
+            document.getElementById('doughnutCenterTitle').innerText = entries[0][0].split(' ')[0].toUpperCase();
+            document.getElementById('doughnutCenterValue').innerText = formatINR(entries[0][1]);
+
+            entries.slice(0, 5).forEach(([catName, amt], idx) => {
+                const pct = totalExp > 0 ? Math.round((amt / totalExp) * 100) : 0;
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between text-xs cursor-pointer hover:bg-white/[0.06] px-2 py-1 rounded-lg transition';
+                item.onclick = () => setCategoryFilter(catName);
+                item.innerHTML = `
+                    <div class="flex items-center space-x-2 min-w-0 pr-2">
+                        <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${colors[idx]}"></span>
+                        <span class="text-[11px] text-zinc-200 truncate font-medium">${catName}</span>
+                    </div>
+                    <div class="font-mono text-[10px] shrink-0 flex items-center space-x-1.5">
+                        <span class="text-white font-bold privacy-target">${formatINR(amt)}</span>
+                        <span class="text-zinc-400">(${pct}%)</span>
+                    </div>
+                `;
+                legendContainer.appendChild(item);
+            });
+        }
+        doughnutChartInstance.update();
+
+        const labels7 = [];
+        const data7 = [];
+        let sum7 = 0;
+        for (let i = 6; i >= 0; i--) {
+            const iso = daysAgoISO(i);
+            labels7.push(new Date(iso).toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase());
+            const daySum = state.transactions.filter(t => t.type === 'expense' && !t.isExchange && t.date === iso).reduce((acc, cur) => acc + Number(cur.amount), 0);
+            data7.push(daySum);
+            sum7 += daySum;
+        }
+        document.getElementById('sevenDayAvgLabel').innerText = `AVG: ₹${Math.round(sum7 / 7).toLocaleString('en-IN')}/d`;
+        weeklyChartInstance.data.labels = labels7;
+        weeklyChartInstance.data.datasets[0].data = data7;
+        weeklyChartInstance.update();
+    }
+
+    function renderCategoryCaps(monthTx) {
+        const container = document.getElementById('categoryCapsContainer');
+        container.innerHTML = '';
+        const catSpend = {};
+        monthTx.filter(t => t.type === 'expense' && !t.isExchange).forEach(t => { catSpend[t.category] = (catSpend[t.category] || 0) + Number(t.amount); });
+
+        CATEGORIES.expense.slice(0, 6).forEach(cat => {
+            const spent = catSpend[cat.name] || 0;
+            const cap = state.categoryCaps[cat.name] || 3000;
+            const pct = Math.min(100, Math.round((spent / cap) * 100));
+            const barColor = pct >= 90 ? 'bg-neonCoral' : pct >= 70 ? 'bg-neonAmber' : 'bg-neonTeal';
+
+            const row = document.createElement('div');
+            row.className = 'space-y-1.5 cursor-pointer group';
+            row.onclick = () => {
+                state.categoryCaps[cat.name] = (cap >= 10000 ? 2000 : cap + 1000);
+                saveState();
+                renderAll();
+                showToast(`${cat.name} cap updated`);
+            };
+            row.innerHTML = `
+                <div class="flex items-center justify-between text-xs">
+                    <div class="flex items-center space-x-2"><i class="fa-solid ${cat.icon} text-zinc-300 text-xs w-4"></i><span class="font-semibold text-zinc-100">${cat.name}</span></div>
+                    <div class="font-mono text-[11px]"><span class="text-white font-bold">${formatINR(spent)}</span><span class="text-zinc-400"> / ${formatINR(cap)}</span></div>
+                </div>
+                <div class="w-full h-1.5 bg-obsidian/80 rounded-full overflow-hidden border border-white/[0.08]">
+                    <div class="h-full ${barColor} rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+                </div>
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    function renderGoals() {
+        const container = document.getElementById('goalsListContainer');
+        container.innerHTML = '';
+        let totalSaved = 0;
+        state.goals.forEach(g => {
+            totalSaved += Number(g.saved);
+            const pct = g.target > 0 ? Math.min(100, Math.round((g.saved / g.target) * 100)) : 0;
+            const card = document.createElement('div');
+            card.className = 'glass-card rounded-3xl p-4 space-y-3';
+            card.innerHTML = `
+                <div class="flex items-start justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-2xl bg-neonTeal/15 border border-neonTeal/30 flex items-center justify-center text-neonTeal">
+                            <i class="fa-solid ${g.icon || 'fa-bullseye'}"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-white">${g.title}</h4>
+                            <span class="font-mono text-[11px] text-zinc-300 privacy-target">${formatINR(g.saved)} of ${formatINR(g.target)}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="font-mono text-xs font-extrabold text-neonTeal">${pct}%</span>
+                        <button onclick="deleteGoal('${g.id}')" class="text-zinc-500 hover:text-neonCoral text-xs"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                </div>
+                <div class="w-full h-2 bg-obsidian/80 rounded-full overflow-hidden p-0.5 border border-white/[0.08]">
+                    <div class="h-full bg-gradient-to-r from-neonTeal to-neonPurple rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+                </div>
+                <div class="flex items-center justify-between pt-1">
+                    <span class="text-[10px] font-mono text-zinc-400">${formatINR(Math.max(0, g.target - g.saved))} to go</span>
+                    <div class="flex space-x-1.5">
+                        <button onclick="addFundsToGoal('${g.id}', 500)" class="px-2.5 py-1 rounded-xl bg-obsidian/80 hover:bg-neonTeal hover:text-obsidian border border-white/15 font-mono text-[10px] font-bold text-neonTeal transition btn-press">+₹500</button>
+                        <button onclick="addFundsToGoal('${g.id}', 1000)" class="px-2.5 py-1 rounded-xl bg-obsidian/80 hover:bg-neonTeal hover:text-obsidian border border-white/15 font-mono text-[10px] font-bold text-neonTeal transition btn-press">+₹1,000</button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+        document.getElementById('totalGoalsSaved').innerText = formatINR(totalSaved);
+    }
+
+    function renderIous() {
+        const container = document.getElementById('iouListContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        let netIou = 0;
+
+        if (state.ious.length === 0) {
+            container.innerHTML = `<div class="glass-card rounded-3xl p-8 text-center space-y-2 border border-dashed border-white/10"><p class="text-xs font-mono uppercase tracking-wider text-zinc-300">NO PENDING IOUS</p></div>`;
+            document.getElementById('totalIouNet').innerText = formatINR(0);
+            return;
+        }
+
+        state.ious.forEach(iou => {
+            const isLent = iou.type === 'lent';
+            if (isLent) netIou += Number(iou.amount);
+            else netIou -= Number(iou.amount);
+
+            const card = document.createElement('div');
+            card.className = 'glass-card rounded-3xl p-4 space-y-3 border border-white/[0.07]';
+            card.innerHTML = `
+                <div class="flex items-start justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-2xl ${isLent ? 'bg-neonTeal/15 text-neonTeal border-neonTeal/30' : 'bg-neonCoral/15 text-neonCoral border-neonCoral/30'} border flex items-center justify-center">
+                            <i class="fa-solid ${isLent ? 'fa-arrow-turn-down' : 'fa-arrow-turn-up'} text-xs"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <h4 class="text-xs font-bold text-white">${iou.person}</h4>
+                                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded ${isLent ? 'bg-neonTeal/10 text-neonTeal' : 'bg-neonCoral/10 text-neonCoral'}">${isLent ? 'THEY OWE YOU' : 'YOU OWE'}</span>
+                            </div>
+                            <p class="text-[11px] text-zinc-300 truncate mt-0.5">${iou.notes || 'Split bill'} • <span class="font-mono text-[10px] text-zinc-400">${iou.date}</span></p>
+                        </div>
+                    </div>
+                    <span class="font-mono text-sm font-extrabold ${isLent ? 'text-neonTeal' : 'text-neonCoral'} privacy-target">${isLent ? '+' : '-'}${formatINR(iou.amount)}</span>
+                </div>
+                <div class="flex items-center justify-between pt-2 border-t border-white/[0.06]">
+                    <button onclick="settleIou('${iou.id}')" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-mono text-[10px] font-bold transition btn-press flex items-center gap-1.5">
+                        <i class="fa-solid fa-check text-[10px] text-neonTeal"></i> SETTLE & LOG (${iou.mode || 'UPI'})
+                    </button>
+                    <button onclick="deleteIou('${iou.id}')" class="text-zinc-500 hover:text-neonCoral text-xs"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+        document.getElementById('totalIouNet').innerText = formatINR(netIou);
+    }
+
+    function renderSubscriptions() {
+        const container = document.getElementById('subscriptionsListContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        let totalMonthly = 0;
+
+        if (state.subscriptions.length === 0) {
+            container.innerHTML = `<div class="glass-card rounded-3xl p-8 text-center space-y-2 border border-dashed border-white/10"><p class="text-xs font-mono uppercase tracking-wider text-zinc-300">NO ACTIVE SUBSCRIPTIONS</p></div>`;
+            document.getElementById('totalMonthlySubs').innerText = formatINR(0) + '/mo';
+            return;
+        }
+
+        state.subscriptions.forEach(sub => {
+            totalMonthly += Number(sub.amount);
+            const card = document.createElement('div');
+            card.className = 'glass-card rounded-3xl p-4 space-y-3 border border-white/[0.07]';
+            card.innerHTML = `
+                <div class="flex items-start justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-2xl bg-neonTeal/15 text-neonTeal border border-neonTeal/30 flex items-center justify-center">
+                            <i class="fa-solid ${sub.icon || 'fa-receipt'} text-xs"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-white">${sub.title}</h4>
+                            <span class="font-mono text-[11px] text-zinc-400">Bills on ⚡ Day ${sub.day} of every month</span>
+                        </div>
+                    </div>
+                    <span class="font-mono text-sm font-extrabold text-neonTeal privacy-target">${formatINR(sub.amount)}/mo</span>
+                </div>
+                <div class="flex items-center justify-between pt-2 border-t border-white/[0.06]">
+                    <span class="text-[10px] font-mono text-zinc-400">Category: ${sub.category}</span>
+                    <div class="flex space-x-2">
+                        <button onclick="paySubscription('${sub.id}')" class="px-3 py-1 rounded-xl bg-neonTeal/20 hover:bg-neonTeal/30 text-neonTeal border border-neonTeal/30 font-mono text-[10px] font-bold transition btn-press">PAY NOW</button>
+                        <button onclick="deleteSubscription('${sub.id}')" class="text-zinc-500 hover:text-neonCoral text-xs"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+        document.getElementById('totalMonthlySubs').innerText = formatINR(totalMonthly) + '/mo';
+    }
+
+    function addFundsToGoal(goalId, amount) {
+        const g = state.goals.find(x => x.id === goalId);
+        if (!g) return;
+        g.saved = Math.min(g.target, Number(g.saved) + amount);
+        saveState();
+        renderGoals();
+        if (g.saved >= g.target) {
+            triggerPulseConfetti();
+            showToast(`🎉 Goal Unlocked: ${g.title}!`);
+        } else {
+            showToast(`Stashed +₹${amount} into ${g.title}`);
+        }
+    }
+
+    function deleteGoal(id) {
+        state.goals = state.goals.filter(g => g.id !== id);
+        saveState();
+        renderGoals();
+        showToast('Goal removed');
+    }
+
+    function openNewGoalModal() {
+        document.getElementById('goalModal').classList.remove('hidden');
+        document.getElementById('goalModal').classList.add('flex');
+    }
+    function closeNewGoalModal() {
+        document.getElementById('goalModal').classList.add('hidden');
+        document.getElementById('goalModal').classList.remove('flex');
+    }
+    function saveNewGoal() {
+        const title = document.getElementById('goalTitleInput').value.trim();
+        const target = Number(document.getElementById('goalTargetInput').value);
+        const saved = Number(document.getElementById('goalSavedInput').value) || 0;
+        if (!title || !target || target <= 0) {
+            showToast('Enter valid goal title & target', false);
+            return;
+        }
+        state.goals.push({
+            id: 'g_' + Date.now(),
+            title,
+            target,
+            saved,
+            icon: 'fa-rocket',
+            color: '#00f5d4'
+        });
+        saveState();
+        renderGoals();
+        closeNewGoalModal();
+        document.getElementById('goalTitleInput').value = '';
+        document.getElementById('goalTargetInput').value = '';
+        document.getElementById('goalSavedInput').value = '';
+        showToast('New Vault Goal created');
+    }
+
+    function openNewIouModal() {
+        document.getElementById('iouModal').classList.remove('hidden');
+        document.getElementById('iouModal').classList.add('flex');
+    }
+    function closeNewIouModal() {
+        document.getElementById('iouModal').classList.add('hidden');
+        document.getElementById('iouModal').classList.remove('flex');
+    }
+
+    function saveNewIou() {
+        const type = document.getElementById('iouTypeInput').value;
+        const person = document.getElementById('iouPersonInput').value.trim();
+        const amount = Number(document.getElementById('iouAmountInput').value);
+        const mode = document.getElementById('iouModeInput').value;
+        const notes = document.getElementById('iouNoteInput').value.trim();
+
+        if (!person || !amount || amount <= 0) {
+            showToast('Enter valid person & amount', false);
+            return;
+        }
+
+        state.ious.unshift({
+            id: 'iou_' + Date.now(),
+            type,
+            person,
+            amount,
+            mode,
+            date: new Date().toISOString().split('T')[0],
+            notes: notes || (type === 'lent' ? 'Lent money' : 'Borrowed split')
+        });
+
+        saveState();
+        renderIous();
+        closeNewIouModal();
+        document.getElementById('iouPersonInput').value = '';
+        document.getElementById('iouAmountInput').value = '';
+        document.getElementById('iouNoteInput').value = '';
+        showToast('Pending IOU recorded');
+    }
+
+    function settleIou(id) {
+        const iou = state.ious.find(x => x.id === id);
+        if (!iou) return;
+
+        const isLent = iou.type === 'lent';
+        const txType = isLent ? 'income' : 'expense';
+        const category = isLent ? 'Pocket / Gift' : 'Other';
+
+        state.transactions.unshift({
+            id: 'tx_iou_' + Date.now(),
+            type: txType,
+            amount: Number(iou.amount),
+            category: category,
+            mode: iou.mode || 'UPI',
+            date: new Date().toISOString().split('T')[0],
+            notes: `Settled IOU: ${isLent ? 'Received from' : 'Paid to'} ${iou.person}`
+        });
+
+        state.ious = state.ious.filter(x => x.id !== id);
+        saveState();
+        renderAll();
+        renderIous();
+        triggerPulseConfetti();
+        showToast(`Settled IOU with ${iou.person} & updated wallet`);
+    }
+
+    function deleteIou(id) {
+        state.ious = state.ious.filter(x => x.id !== id);
+        saveState();
+        renderIous();
+        showToast('IOU record removed');
+    }
+
+    function openNewSubModal() {
+        document.getElementById('subModal').classList.remove('hidden');
+        document.getElementById('subModal').classList.add('flex');
+    }
+    function closeNewSubModal() {
+        document.getElementById('subModal').classList.add('hidden');
+        document.getElementById('subModal').classList.remove('flex');
+    }
+
+    function saveNewSubscription() {
+        const title = document.getElementById('subTitleInput').value.trim();
+        const amount = Number(document.getElementById('subAmountInput').value);
+        const day = Number(document.getElementById('subDayInput').value) || 1;
+        const category = document.getElementById('subCategoryInput').value;
+
+        if (!title || !amount || amount <= 0) {
+            showToast('Enter valid service name & amount', false);
+            return;
+        }
+
+        state.subscriptions.push({
+            id: 'sub_' + Date.now(),
+            title,
+            amount,
+            day,
+            category,
+            icon: 'fa-bolt'
+        });
+
+        saveState();
+        renderSubscriptions();
+        renderAll();
+        closeNewSubModal();
+        document.getElementById('subTitleInput').value = '';
+        document.getElementById('subAmountInput').value = '';
+        document.getElementById('subDayInput').value = '';
+        showToast('Subscription added to Auto-Burn Radar');
+    }
+
+    function paySubscription(id) {
+        const sub = state.subscriptions.find(x => x.id === id);
+        if (!sub) return;
+
+        state.transactions.unshift({
+            id: 'tx_sub_' + Date.now(),
+            type: 'expense',
+            amount: Number(sub.amount),
+            category: sub.category,
+            mode: 'UPI',
+            date: new Date().toISOString().split('T')[0],
+            notes: `Recurring Sub: ${sub.title}`
+        });
+
+        saveState();
+        renderAll();
+        triggerPulseConfetti();
+        showToast(`Paid & logged ${sub.title} • ₹${sub.amount}`);
+    }
+
+    function deleteSubscription(id) {
+        state.subscriptions = state.subscriptions.filter(x => x.id !== id);
+        saveState();
+        renderSubscriptions();
+        renderAll();
+        showToast('Subscription removed');
+    }
+
+    function openBudgetModal() {
+        document.getElementById('overallBudgetInput').value = state.monthlyBudget;
+        document.getElementById('budgetModal').classList.remove('hidden');
+        document.getElementById('budgetModal').classList.add('flex');
+    }
+    function closeBudgetModal() { document.getElementById('budgetModal').classList.add('hidden'); document.getElementById('budgetModal').classList.remove('flex'); }
+    function saveOverallBudget() {
+        const val = Number(document.getElementById('overallBudgetInput').value);
+        if (val > 0) { state.monthlyBudget = val; saveState(); renderAll(); closeBudgetModal(); showToast('Budget updated'); }
+    }
+
+    function openDataModal() { document.getElementById('dataModal').classList.remove('hidden'); document.getElementById('dataModal').classList.add('flex'); }
+    function closeDataModal() { document.getElementById('dataModal').classList.add('hidden'); document.getElementById('dataModal').classList.remove('flex'); }
+
+    function exportCSV() {
+        const headers = ['ID,Date,Type,Category,Mode,Amount,Notes'];
+        const rows = state.transactions.map(t => `"${t.id}","${t.date}","${t.type}","${t.category}","${t.mode || 'UPI'}","${t.amount}","${(t.notes || '').replace(/"/g, '""')}"`);
+        const csvString = headers.concat(rows).join('\n');
+        const filename = `flux_export_${new Date().toISOString().split('T')[0]}.csv`;
+
+        if (window.AndroidBridge && window.AndroidBridge.saveFileToDownloads) {
+            window.AndroidBridge.saveFileToDownloads(filename, csvString, 'text/csv');
+        } else {
+            const a = document.createElement('a');
+            a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvString);
+            a.download = filename;
+            a.click();
+        }
+        closeDataModal();
+        showToast('Saved to Downloads folder');
+    }
+
+    function exportJSON() {
+        const jsonString = JSON.stringify(state, null, 2);
+        const filename = `flux_backup_${new Date().toISOString().split('T')[0]}.json`;
+
+        if (window.AndroidBridge && window.AndroidBridge.saveFileToDownloads) {
+            window.AndroidBridge.saveFileToDownloads(filename, jsonString, 'application/json');
+        } else {
+            const a = document.createElement('a');
+            a.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(jsonString);
+            a.download = filename;
+            a.click();
+        }
+        closeDataModal();
+        showToast('Backup saved to Downloads');
+    }
+
+    function importJSON(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const parsed = JSON.parse(e.target.result);
+                if (Array.isArray(parsed)) {
+                    state.transactions = parsed;
+                } else if (parsed && typeof parsed === 'object') {
+                    if (Array.isArray(parsed.transactions)) state.transactions = parsed.transactions;
+                    if (Array.isArray(parsed.presets)) state.presets = parsed.presets;
+                    if (Array.isArray(parsed.goals)) state.goals = parsed.goals;
+                    if (Array.isArray(parsed.ious)) state.ious = parsed.ious;
+                    if (Array.isArray(parsed.subscriptions)) state.subscriptions = parsed.subscriptions;
+                    if (parsed.categoryCaps && typeof parsed.categoryCaps === 'object') state.categoryCaps = parsed.categoryCaps;
+                    if (typeof parsed.monthlyBudget === 'number') state.monthlyBudget = parsed.monthlyBudget;
+                    if (typeof parsed.upiOffset === 'number') state.upiOffset = parsed.upiOffset;
+                    if (typeof parsed.cashOffset === 'number') state.cashOffset = parsed.cashOffset;
+                }
+                saveState();
+                populateMonthSelector();
+                renderPresets();
+                renderAll();
+                closeDataModal();
+                showToast('Full backup restored successfully');
+            } catch (err) {
+                showToast('Invalid backup file', false);
+            }
+            event.target.value = '';
+        };
+        reader.readAsText(file);
+    }
+
+    function resetToDemoData() {
+        state.transactions = getDefaultTransactions();
+        state.upiOffset = 0;
+        state.cashOffset = 0;
+        saveState();
+        renderAll();
+        closeDataModal();
+        showToast('Demo data loaded');
+    }
+
+    function wipeAllData() {
+        state.transactions = [];
+        state.upiOffset = 0;
+        state.cashOffset = 0;
+        saveState();
+        renderAll();
+        closeDataModal();
+        showToast('All cleared');
+    }
+
+    let toastTimeout = null;
+    function showToast(msg, showUndo = false) {
+        const bar = document.getElementById('toastBar');
+        document.getElementById('toastText').innerText = msg;
+        if (showUndo) document.getElementById('toastUndoBtn').classList.remove('hidden');
+        else document.getElementById('toastUndoBtn').classList.add('hidden');
+        bar.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-3');
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => bar.classList.add('opacity-0', 'pointer-events-none', '-translate-y-3'), 3400);
+    }
+
+    function triggerPulseConfetti() {
+        if (typeof confetti === 'function') confetti({ particleCount: 45, spread: 60, origin: { y: 0.75 }, colors: ['#00f5d4', '#ff4d6d', '#ffb703', '#9b5de5'] });
+    }
+</script>
+</body>
+</html>
